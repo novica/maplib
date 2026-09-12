@@ -2318,10 +2318,13 @@ name = "maplibr"
 version = "0.1.0"
 dependencies = [
  "maplib",
+ "oxrdf",
+ "oxrdfio",
  "polars",
  "polars-arrow",
  "representation",
  "savvy",
+ "triplestore",
 ]
 
 [[package]]

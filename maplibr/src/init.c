@@ -54,8 +54,18 @@ SEXP savvy_RModel_new__impl(void) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_reads__impl(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_reads__ffi(self__, c_arg__s, c_arg__format, c_arg__graph);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_size__impl(SEXP self__) {
     SEXP res = savvy_RModel_size__ffi(self__);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_writes__ffi(self__, c_arg__format, c_arg__graph);
     return handle_result(res);
 }
 
@@ -64,7 +74,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_export_test_series__impl", (DL_FUNC) &savvy_export_test_series__impl, 1},
     {"savvy_import_test_series__impl", (DL_FUNC) &savvy_import_test_series__impl, 1},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
+    {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 1},
+    {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
     {NULL, NULL, 0}
 };
 
