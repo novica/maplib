@@ -49,6 +49,16 @@ SEXP savvy_import_test_series__impl(SEXP c_arg__stream_ptr) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_add_prefixes__impl(SEXP self__, SEXP c_arg__prefixes) {
+    SEXP res = savvy_RModel_add_prefixes__ffi(self__, c_arg__prefixes);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_create_index__impl(SEXP self__) {
+    SEXP res = savvy_RModel_create_index__ffi(self__);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_new__impl(void) {
     SEXP res = savvy_RModel_new__ffi();
     return handle_result(res);
@@ -64,6 +74,11 @@ SEXP savvy_RModel_size__impl(SEXP self__) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_truncate_graph__impl(SEXP self__, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_truncate_graph__ffi(self__, c_arg__graph);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph) {
     SEXP res = savvy_RModel_writes__ffi(self__, c_arg__format, c_arg__graph);
     return handle_result(res);
@@ -73,9 +88,12 @@ SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__grap
 static const R_CallMethodDef CallEntries[] = {
     {"savvy_export_test_series__impl", (DL_FUNC) &savvy_export_test_series__impl, 1},
     {"savvy_import_test_series__impl", (DL_FUNC) &savvy_import_test_series__impl, 1},
+    {"savvy_RModel_add_prefixes__impl", (DL_FUNC) &savvy_RModel_add_prefixes__impl, 2},
+    {"savvy_RModel_create_index__impl", (DL_FUNC) &savvy_RModel_create_index__impl, 1},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 1},
+    {"savvy_RModel_truncate_graph__impl", (DL_FUNC) &savvy_RModel_truncate_graph__impl, 2},
     {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
     {NULL, NULL, 0}
 };

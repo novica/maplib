@@ -58,6 +58,18 @@ NULL
 
 ### wrapper functions for RModel
 
+`RModel_add_prefixes` <- function(self) {
+  function(`prefixes`) {
+    invisible(.Call(savvy_RModel_add_prefixes__impl, `self`, `prefixes`))
+  }
+}
+
+`RModel_create_index` <- function(self) {
+  function() {
+    invisible(.Call(savvy_RModel_create_index__impl, `self`))
+  }
+}
+
 `RModel_reads` <- function(self) {
   function(`s`, `format`, `graph` = NULL) {
     invisible(.Call(savvy_RModel_reads__impl, `self`, `s`, `format`, `graph`))
@@ -70,6 +82,12 @@ NULL
   }
 }
 
+`RModel_truncate_graph` <- function(self) {
+  function(`graph` = NULL) {
+    invisible(.Call(savvy_RModel_truncate_graph__impl, `self`, `graph`))
+  }
+}
+
 `RModel_writes` <- function(self) {
   function(`format` = NULL, `graph` = NULL) {
     .Call(savvy_RModel_writes__impl, `self`, `format`, `graph`)
@@ -79,8 +97,11 @@ NULL
 `.savvy_wrap_RModel` <- function(ptr) {
   e <- new.env(parent = emptyenv())
   e$.ptr <- ptr
+  e$`add_prefixes` <- `RModel_add_prefixes`(ptr)
+  e$`create_index` <- `RModel_create_index`(ptr)
   e$`reads` <- `RModel_reads`(ptr)
   e$`size` <- `RModel_size`(ptr)
+  e$`truncate_graph` <- `RModel_truncate_graph`(ptr)
   e$`writes` <- `RModel_writes`(ptr)
 
   class(e) <- c("maplibr::RModel", "RModel", "savvy_maplibr__sealed")
