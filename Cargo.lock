@@ -2322,6 +2322,7 @@ dependencies = [
  "oxrdfio",
  "polars",
  "polars-arrow",
+ "pyo3",
  "representation",
  "savvy",
  "triplestore",

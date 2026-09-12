@@ -89,6 +89,12 @@ NULL
   }
 }
 
+`RModel_infer_rdfs` <- function(self) {
+  function(`graph` = NULL) {
+    .Call(savvy_RModel_infer_rdfs__impl, `self`, `graph`)
+  }
+}
+
 `RModel_reads` <- function(self) {
   function(`s`, `format`, `graph` = NULL) {
     invisible(.Call(savvy_RModel_reads__impl, `self`, `s`, `format`, `graph`))
@@ -127,6 +133,7 @@ NULL
   e$`compact` <- `RModel_compact`(ptr)
   e$`create_index` <- `RModel_create_index`(ptr)
   e$`detach_graph` <- `RModel_detach_graph`(ptr)
+  e$`infer_rdfs` <- `RModel_infer_rdfs`(ptr)
   e$`reads` <- `RModel_reads`(ptr)
   e$`serialize` <- `RModel_serialize`(ptr)
   e$`size` <- `RModel_size`(ptr)

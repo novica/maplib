@@ -12,6 +12,7 @@ representation = { path = "../../../lib/representation" }
 triplestore = { path = "../../../lib/triplestore" }
 oxrdf = { workspace = true }
 oxrdfio = { workspace = true }
+pyo3 = { workspace = true }
 polars = { version = "0.54.4", default-features = false }
 polars-arrow = "0.54.4"
 savvy = "0.8"

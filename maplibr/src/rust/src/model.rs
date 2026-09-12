@@ -47,6 +47,17 @@ impl RModel {
     ///
     /// @export
     fn new() -> savvy::Result<Self> {
+        // Required: see CLAUDE.md's pyo3-leak note. lib/utils/src/polars.rs's
+        // pl_interruptable_collect (used by query/insert/update/map/
+        // infer_rdfs -- anything that materializes a LazyFrame) calls
+        // pyo3::Python::attach unconditionally when built with the pyo3
+        // feature, which panics unless some Python interpreter has been
+        // initialized in this process. Python::initialize() is pyo3's own
+        // documented mechanism for embedding in a non-Python host; safe to
+        // call on every RModel::new() (verified idempotent -- a second call
+        // in the same session doesn't panic or error).
+        pyo3::Python::initialize();
+
         let model = maplib::model::Model::new(None, None, None, None)
             .map_err(|e| savvy::Error::new(&e.to_string()))?;
         Ok(Self {
@@ -192,6 +203,21 @@ impl RModel {
         Ok(RModel {
             inner: Mutex::new(sprout),
         })
+    }
+
+    /// Run RDFS inference over a graph in place, returning the number of
+    /// interesting inference rules applied (mirrors PyModel::infer_rdfs,
+    /// py_maplib/src/py_model.rs:903-916).
+    ///
+    /// @param graph Optional named graph IRI to infer over (default graph if NULL).
+    /// @export
+    fn infer_rdfs(&self, graph: Option<&str>) -> savvy::Result<savvy::Sexp> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.inner.lock().unwrap();
+        let n = inner
+            .infer_rdfs(&named_graph)
+            .map_err(|e| savvy::Error::new(&e.to_string()))?;
+        (n as i32).try_into()
     }
 
     /// Compact on-disk storage (mirrors PyModel::compact, py_maplib/src/py_model.rs:919-924).

@@ -79,6 +79,11 @@ SEXP savvy_RModel_detach_graph__impl(SEXP self__, SEXP c_arg__preserve_name, SEX
     return handle_result(res);
 }
 
+SEXP savvy_RModel_infer_rdfs__impl(SEXP self__, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_infer_rdfs__ffi(self__, c_arg__graph);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_new__impl(void) {
     SEXP res = savvy_RModel_new__ffi();
     return handle_result(res);
@@ -119,6 +124,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_create_index__impl", (DL_FUNC) &savvy_RModel_create_index__impl, 1},
     {"savvy_RModel_deserialize__impl", (DL_FUNC) &savvy_RModel_deserialize__impl, 2},
     {"savvy_RModel_detach_graph__impl", (DL_FUNC) &savvy_RModel_detach_graph__impl, 3},
+    {"savvy_RModel_infer_rdfs__impl", (DL_FUNC) &savvy_RModel_infer_rdfs__impl, 2},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},
