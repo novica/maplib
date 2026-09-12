@@ -3,6 +3,7 @@ use oxrdfio::RdfFormat;
 use representation::dataset::NamedGraph;
 use savvy::{savvy, ListSexp};
 use std::collections::HashMap;
+use std::path::Path;
 use std::sync::Mutex;
 use triplestore::triples_read::ExtendedRdfFormat;
 use triplestore::IndexingOptions;
@@ -190,6 +191,46 @@ impl RModel {
             .map_err(|e| savvy::Error::new(&e.to_string()))?;
         Ok(RModel {
             inner: Mutex::new(sprout),
+        })
+    }
+
+    /// Compact on-disk storage (mirrors PyModel::compact, py_maplib/src/py_model.rs:919-924).
+    ///
+    /// @export
+    fn compact(&self) -> savvy::Result<()> {
+        let mut inner = self.inner.lock().unwrap();
+        inner.compact().map_err(|e| savvy::Error::new(&e.to_string()))
+    }
+
+    /// Serialize this Model's triples to a directory in maplib's own compact
+    /// on-disk format (not an RDF interchange format -- use write()/writes()
+    /// for that). Mirrors PyModel::serialize, py_maplib/src/py_model.rs:926-934.
+    ///
+    /// @param path Directory to serialize into.
+    /// @export
+    fn serialize(&self, path: &str) -> savvy::Result<()> {
+        let mut inner = self.inner.lock().unwrap();
+        inner
+            .serialize_triples(Path::new(path))
+            .map_err(|e| savvy::Error::new(&e.to_string()))
+    }
+
+    /// Load a Model previously written by serialize() (mirrors
+    /// PyModel::deserialize, py_maplib/src/py_model.rs:936-954). This is an
+    /// associated function, not a method -- call as `RModel$deserialize(path)`.
+    ///
+    /// @param path Directory previously written by serialize().
+    /// @param storage_folder Optional folder for on-disk (rather than
+    ///   in-memory) triplestore storage.
+    /// @export
+    fn deserialize(path: &str, storage_folder: Option<&str>) -> savvy::Result<RModel> {
+        let model = maplib::model::Model::deserialize_triples(
+            Path::new(path),
+            storage_folder.map(String::from),
+        )
+        .map_err(|e| savvy::Error::new(&e.to_string()))?;
+        Ok(RModel {
+            inner: Mutex::new(model),
         })
     }
 }

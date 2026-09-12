@@ -71,6 +71,12 @@ NULL
   }
 }
 
+`RModel_compact` <- function(self) {
+  function() {
+    invisible(.Call(savvy_RModel_compact__impl, `self`))
+  }
+}
+
 `RModel_create_index` <- function(self) {
   function() {
     invisible(.Call(savvy_RModel_create_index__impl, `self`))
@@ -86,6 +92,12 @@ NULL
 `RModel_reads` <- function(self) {
   function(`s`, `format`, `graph` = NULL) {
     invisible(.Call(savvy_RModel_reads__impl, `self`, `s`, `format`, `graph`))
+  }
+}
+
+`RModel_serialize` <- function(self) {
+  function(`path`) {
+    invisible(.Call(savvy_RModel_serialize__impl, `self`, `path`))
   }
 }
 
@@ -112,9 +124,11 @@ NULL
   e$.ptr <- ptr
   e$`add_graph` <- `RModel_add_graph`(ptr)
   e$`add_prefixes` <- `RModel_add_prefixes`(ptr)
+  e$`compact` <- `RModel_compact`(ptr)
   e$`create_index` <- `RModel_create_index`(ptr)
   e$`detach_graph` <- `RModel_detach_graph`(ptr)
   e$`reads` <- `RModel_reads`(ptr)
+  e$`serialize` <- `RModel_serialize`(ptr)
   e$`size` <- `RModel_size`(ptr)
   e$`truncate_graph` <- `RModel_truncate_graph`(ptr)
   e$`writes` <- `RModel_writes`(ptr)
@@ -130,6 +144,10 @@ NULL
 `RModel` <- new.env(parent = emptyenv())
 
 ### associated functions for RModel
+
+`RModel`$`deserialize` <- function(`path`, `storage_folder` = NULL) {
+  .savvy_wrap_RModel(.Call(savvy_RModel_deserialize__impl, `path`, `storage_folder`))
+}
 
 `RModel`$`new` <- function() {
   .savvy_wrap_RModel(.Call(savvy_RModel_new__impl))

@@ -59,8 +59,18 @@ SEXP savvy_RModel_add_prefixes__impl(SEXP self__, SEXP c_arg__prefixes) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_compact__impl(SEXP self__) {
+    SEXP res = savvy_RModel_compact__ffi(self__);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_create_index__impl(SEXP self__) {
     SEXP res = savvy_RModel_create_index__ffi(self__);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_deserialize__impl(SEXP c_arg__path, SEXP c_arg__storage_folder) {
+    SEXP res = savvy_RModel_deserialize__ffi(c_arg__path, c_arg__storage_folder);
     return handle_result(res);
 }
 
@@ -76,6 +86,11 @@ SEXP savvy_RModel_new__impl(void) {
 
 SEXP savvy_RModel_reads__impl(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph) {
     SEXP res = savvy_RModel_reads__ffi(self__, c_arg__s, c_arg__format, c_arg__graph);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_serialize__impl(SEXP self__, SEXP c_arg__path) {
+    SEXP res = savvy_RModel_serialize__ffi(self__, c_arg__path);
     return handle_result(res);
 }
 
@@ -100,10 +115,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_import_test_series__impl", (DL_FUNC) &savvy_import_test_series__impl, 1},
     {"savvy_RModel_add_graph__impl", (DL_FUNC) &savvy_RModel_add_graph__impl, 4},
     {"savvy_RModel_add_prefixes__impl", (DL_FUNC) &savvy_RModel_add_prefixes__impl, 2},
+    {"savvy_RModel_compact__impl", (DL_FUNC) &savvy_RModel_compact__impl, 1},
     {"savvy_RModel_create_index__impl", (DL_FUNC) &savvy_RModel_create_index__impl, 1},
+    {"savvy_RModel_deserialize__impl", (DL_FUNC) &savvy_RModel_deserialize__impl, 2},
     {"savvy_RModel_detach_graph__impl", (DL_FUNC) &savvy_RModel_detach_graph__impl, 3},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
+    {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 1},
     {"savvy_RModel_truncate_graph__impl", (DL_FUNC) &savvy_RModel_truncate_graph__impl, 2},
     {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
