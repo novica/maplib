@@ -2,8 +2,10 @@ SEXP savvy_export_test_series__ffi(SEXP c_arg__stream_ptr);
 SEXP savvy_import_test_series__ffi(SEXP c_arg__stream_ptr);
 
 // methods and associated functions for RModel
+SEXP savvy_RModel_add_graph__ffi(SEXP self__, SEXP c_arg__other, SEXP c_arg__source_graph, SEXP c_arg__target_graph);
 SEXP savvy_RModel_add_prefixes__ffi(SEXP self__, SEXP c_arg__prefixes);
 SEXP savvy_RModel_create_index__ffi(SEXP self__);
+SEXP savvy_RModel_detach_graph__ffi(SEXP self__, SEXP c_arg__preserve_name, SEXP c_arg__graph);
 SEXP savvy_RModel_new__ffi(void);
 SEXP savvy_RModel_reads__ffi(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_size__ffi(SEXP self__);

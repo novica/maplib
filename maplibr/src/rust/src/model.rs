@@ -151,4 +151,45 @@ impl RModel {
         inner.prefixes.extend(parsed);
         Ok(())
     }
+
+    /// Copy a graph from another Model's triplestore into this one (mirrors
+    /// PyModel::add_graph, py_maplib/src/py_model.rs:997-1015).
+    ///
+    /// @param other Another Model to copy a graph from.
+    /// @param source_graph Optional named graph IRI in `other` (default graph if NULL).
+    /// @param target_graph Optional named graph IRI in this Model to copy into (default graph if NULL).
+    /// @export
+    fn add_graph(
+        &self,
+        other: &RModel,
+        source_graph: Option<&str>,
+        target_graph: Option<&str>,
+    ) -> savvy::Result<()> {
+        let source_graph = parse_optional_named_graph(source_graph)?;
+        let target_graph = parse_optional_named_graph(target_graph)?;
+        let other_inner = other.inner.lock().unwrap();
+        let mut inner = self.inner.lock().unwrap();
+        inner
+            .add_graph(&other_inner.triplestore, source_graph, target_graph)
+            .map_err(|e| savvy::Error::new(&e.to_string()))
+    }
+
+    /// Split a graph out of this Model into a brand new, standalone Model
+    /// (mirrors detach_graph_mutex, py_maplib/src/mutexes.rs:106-118).
+    ///
+    /// @param preserve_name Keep the graph's own name in the new Model rather
+    ///   than moving it to the default graph there.
+    /// @param graph Optional named graph IRI to detach (default graph if NULL).
+    /// @returns A new Model containing only the detached graph.
+    /// @export
+    fn detach_graph(&self, preserve_name: bool, graph: Option<&str>) -> savvy::Result<RModel> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.inner.lock().unwrap();
+        let sprout = inner
+            .detach_graph(&named_graph, preserve_name)
+            .map_err(|e| savvy::Error::new(&e.to_string()))?;
+        Ok(RModel {
+            inner: Mutex::new(sprout),
+        })
+    }
 }
