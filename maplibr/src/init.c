@@ -59,6 +59,11 @@ SEXP savvy_import_test_solution_mappings__impl(SEXP c_arg__stream_ptr, SEXP c_ar
     return handle_result(res);
 }
 
+SEXP savvy_make_triple__impl(SEXP c_arg__subject, SEXP c_arg__predicate, SEXP c_arg__object, SEXP c_arg__list_expander) {
+    SEXP res = savvy_make_triple__ffi(c_arg__subject, c_arg__predicate, c_arg__object, c_arg__list_expander);
+    return handle_result(res);
+}
+
 SEXP savvy_validate_blank_node_id__impl(SEXP c_arg__id) {
     SEXP res = savvy_validate_blank_node_id__ffi(c_arg__id);
     return handle_result(res);
@@ -71,6 +76,46 @@ SEXP savvy_validate_iri__impl(SEXP c_arg__iri) {
 
 SEXP savvy_validate_variable_name__impl(SEXP c_arg__name) {
     SEXP res = savvy_validate_variable_name__ffi(c_arg__name);
+    return handle_result(res);
+}
+
+SEXP savvy_RArgument_from_constant_term__impl(SEXP c_arg__term, SEXP c_arg__list_expand) {
+    SEXP res = savvy_RArgument_from_constant_term__ffi(c_arg__term, c_arg__list_expand);
+    return handle_result(res);
+}
+
+SEXP savvy_RArgument_from_variable__impl(SEXP c_arg__name, SEXP c_arg__list_expand) {
+    SEXP res = savvy_RArgument_from_variable__ffi(c_arg__name, c_arg__list_expand);
+    return handle_result(res);
+}
+
+SEXP savvy_RConstantTerm_blank_node__impl(SEXP c_arg__id) {
+    SEXP res = savvy_RConstantTerm_blank_node__ffi(c_arg__id);
+    return handle_result(res);
+}
+
+SEXP savvy_RConstantTerm_iri__impl(SEXP c_arg__iri) {
+    SEXP res = savvy_RConstantTerm_iri__ffi(c_arg__iri);
+    return handle_result(res);
+}
+
+SEXP savvy_RConstantTerm_literal__impl(SEXP c_arg__value, SEXP c_arg__datatype_iri, SEXP c_arg__language) {
+    SEXP res = savvy_RConstantTerm_literal__ffi(c_arg__value, c_arg__datatype_iri, c_arg__language);
+    return handle_result(res);
+}
+
+SEXP savvy_RConstantTerm_none__impl(void) {
+    SEXP res = savvy_RConstantTerm_none__ffi();
+    return handle_result(res);
+}
+
+SEXP savvy_RInstance_iri__impl(SEXP self__) {
+    SEXP res = savvy_RInstance_iri__ffi(self__);
+    return handle_result(res);
+}
+
+SEXP savvy_RInstance_new__impl(SEXP c_arg__template_iri, SEXP c_arg__arguments, SEXP c_arg__list_expander) {
+    SEXP res = savvy_RInstance_new__ffi(c_arg__template_iri, c_arg__arguments, c_arg__list_expander);
     return handle_result(res);
 }
 
@@ -139,15 +184,49 @@ SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__grap
     return handle_result(res);
 }
 
+SEXP savvy_RParameter_new__impl(SEXP c_arg__variable_name, SEXP c_arg__optional, SEXP c_arg__allow_blank, SEXP c_arg__rdf_type_iri, SEXP c_arg__default_value) {
+    SEXP res = savvy_RParameter_new__ffi(c_arg__variable_name, c_arg__optional, c_arg__allow_blank, c_arg__rdf_type_iri, c_arg__default_value);
+    return handle_result(res);
+}
+
+SEXP savvy_RTemplate_instance__impl(SEXP self__, SEXP c_arg__arguments, SEXP c_arg__list_expander) {
+    SEXP res = savvy_RTemplate_instance__ffi(self__, c_arg__arguments, c_arg__list_expander);
+    return handle_result(res);
+}
+
+SEXP savvy_RTemplate_iri__impl(SEXP self__) {
+    SEXP res = savvy_RTemplate_iri__ffi(self__);
+    return handle_result(res);
+}
+
+SEXP savvy_RTemplate_new__impl(SEXP c_arg__iri, SEXP c_arg__parameters, SEXP c_arg__instances) {
+    SEXP res = savvy_RTemplate_new__ffi(c_arg__iri, c_arg__parameters, c_arg__instances);
+    return handle_result(res);
+}
+
+SEXP savvy_RTemplate_print_string__impl(SEXP self__) {
+    SEXP res = savvy_RTemplate_print_string__ffi(self__);
+    return handle_result(res);
+}
+
 
 static const R_CallMethodDef CallEntries[] = {
     {"savvy_export_test_series__impl", (DL_FUNC) &savvy_export_test_series__impl, 1},
     {"savvy_export_test_solution_mappings__impl", (DL_FUNC) &savvy_export_test_solution_mappings__impl, 1},
     {"savvy_import_test_series__impl", (DL_FUNC) &savvy_import_test_series__impl, 1},
     {"savvy_import_test_solution_mappings__impl", (DL_FUNC) &savvy_import_test_solution_mappings__impl, 2},
+    {"savvy_make_triple__impl", (DL_FUNC) &savvy_make_triple__impl, 4},
     {"savvy_validate_blank_node_id__impl", (DL_FUNC) &savvy_validate_blank_node_id__impl, 1},
     {"savvy_validate_iri__impl", (DL_FUNC) &savvy_validate_iri__impl, 1},
     {"savvy_validate_variable_name__impl", (DL_FUNC) &savvy_validate_variable_name__impl, 1},
+    {"savvy_RArgument_from_constant_term__impl", (DL_FUNC) &savvy_RArgument_from_constant_term__impl, 2},
+    {"savvy_RArgument_from_variable__impl", (DL_FUNC) &savvy_RArgument_from_variable__impl, 2},
+    {"savvy_RConstantTerm_blank_node__impl", (DL_FUNC) &savvy_RConstantTerm_blank_node__impl, 1},
+    {"savvy_RConstantTerm_iri__impl", (DL_FUNC) &savvy_RConstantTerm_iri__impl, 1},
+    {"savvy_RConstantTerm_literal__impl", (DL_FUNC) &savvy_RConstantTerm_literal__impl, 3},
+    {"savvy_RConstantTerm_none__impl", (DL_FUNC) &savvy_RConstantTerm_none__impl, 0},
+    {"savvy_RInstance_iri__impl", (DL_FUNC) &savvy_RInstance_iri__impl, 1},
+    {"savvy_RInstance_new__impl", (DL_FUNC) &savvy_RInstance_new__impl, 3},
     {"savvy_RModel_add_graph__impl", (DL_FUNC) &savvy_RModel_add_graph__impl, 4},
     {"savvy_RModel_add_prefixes__impl", (DL_FUNC) &savvy_RModel_add_prefixes__impl, 2},
     {"savvy_RModel_compact__impl", (DL_FUNC) &savvy_RModel_compact__impl, 1},
@@ -161,6 +240,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 1},
     {"savvy_RModel_truncate_graph__impl", (DL_FUNC) &savvy_RModel_truncate_graph__impl, 2},
     {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
+    {"savvy_RParameter_new__impl", (DL_FUNC) &savvy_RParameter_new__impl, 5},
+    {"savvy_RTemplate_instance__impl", (DL_FUNC) &savvy_RTemplate_instance__impl, 3},
+    {"savvy_RTemplate_iri__impl", (DL_FUNC) &savvy_RTemplate_iri__impl, 1},
+    {"savvy_RTemplate_new__impl", (DL_FUNC) &savvy_RTemplate_new__impl, 3},
+    {"savvy_RTemplate_print_string__impl", (DL_FUNC) &savvy_RTemplate_print_string__impl, 1},
     {NULL, NULL, 0}
 };
 

@@ -85,6 +85,17 @@ NULL
   .Call(savvy_import_test_solution_mappings__impl, `stream_ptr`, `rdf_node_types_json`)
 }
 
+#' Build an rdf:type-style Triple instance (mirrors py_maplib's `Triple()`
+#' helper, lib/templates/src/python.rs:404-417).
+#'
+#' @export
+`make_triple` <- function(`subject`, `predicate`, `object`, `list_expander` = NULL) {
+  `subject` <- .savvy_extract_ptr(`subject`, "maplibr::RArgument")
+  `predicate` <- .savvy_extract_ptr(`predicate`, "maplibr::RArgument")
+  `object` <- .savvy_extract_ptr(`object`, "maplibr::RArgument")
+  .savvy_wrap_RInstance(.Call(savvy_make_triple__impl, `subject`, `predicate`, `object`, `list_expander`))
+}
+
 #' Validate a blank node identifier's syntax (mirrors oxrdf::BlankNode::new,
 #' used by py_maplib's PyBlankNode::new, lib/representation/src/python.rs:531-535).
 #' Raises an R error on invalid syntax; returns nothing on success.
@@ -113,6 +124,127 @@ NULL
 #' @export
 `validate_variable_name` <- function(`name`) {
   invisible(.Call(savvy_validate_variable_name__impl, `name`))
+}
+
+### wrapper functions for RArgument
+
+
+`.savvy_wrap_RArgument` <- function(ptr) {
+  e <- new.env(parent = emptyenv())
+  e$.ptr <- ptr
+
+
+  class(e) <- c("maplibr::RArgument", "RArgument", "savvy_maplibr__sealed")
+  e
+}
+
+
+#' An OTTR argument: a Variable, or a constant term (IRI/BlankNode/Literal/none).
+#' Mirrors py_maplib's `Argument` (lib/templates/src/python.rs:203-236).
+#'
+#' @export
+`RArgument` <- new.env(parent = emptyenv())
+
+### associated functions for RArgument
+
+`RArgument`$`from_constant_term` <- function(`term`, `list_expand`) {
+  `term` <- .savvy_extract_ptr(`term`, "maplibr::RConstantTerm")
+  .savvy_wrap_RArgument(.Call(savvy_RArgument_from_constant_term__impl, `term`, `list_expand`))
+}
+
+`RArgument`$`from_variable` <- function(`name`, `list_expand`) {
+  .savvy_wrap_RArgument(.Call(savvy_RArgument_from_variable__impl, `name`, `list_expand`))
+}
+
+
+class(`RArgument`) <- c("maplibr::RArgument__bundle", "savvy_maplibr__sealed")
+
+#' @export
+`print.maplibr::RArgument__bundle` <- function(x, ...) {
+  cat('maplibr::RArgument\n')
+}
+
+### wrapper functions for RConstantTerm
+
+
+`.savvy_wrap_RConstantTerm` <- function(ptr) {
+  e <- new.env(parent = emptyenv())
+  e$.ptr <- ptr
+
+
+  class(e) <- c("maplibr::RConstantTerm", "RConstantTerm", "savvy_maplibr__sealed")
+  e
+}
+
+
+#' An OTTR constant term: an IRI, blank node, literal, or explicit "none".
+#' Mirrors py_maplib's `extract_constant_term` (lib/templates/src/python.rs:434-446).
+#'
+#' @export
+`RConstantTerm` <- new.env(parent = emptyenv())
+
+### associated functions for RConstantTerm
+
+`RConstantTerm`$`blank_node` <- function(`id`) {
+  .savvy_wrap_RConstantTerm(.Call(savvy_RConstantTerm_blank_node__impl, `id`))
+}
+
+`RConstantTerm`$`iri` <- function(`iri`) {
+  .savvy_wrap_RConstantTerm(.Call(savvy_RConstantTerm_iri__impl, `iri`))
+}
+
+`RConstantTerm`$`literal` <- function(`value`, `datatype_iri`, `language` = NULL) {
+  .savvy_wrap_RConstantTerm(.Call(savvy_RConstantTerm_literal__impl, `value`, `datatype_iri`, `language`))
+}
+
+`RConstantTerm`$`none` <- function() {
+  .savvy_wrap_RConstantTerm(.Call(savvy_RConstantTerm_none__impl))
+}
+
+
+class(`RConstantTerm`) <- c("maplibr::RConstantTerm__bundle", "savvy_maplibr__sealed")
+
+#' @export
+`print.maplibr::RConstantTerm__bundle` <- function(x, ...) {
+  cat('maplibr::RConstantTerm\n')
+}
+
+### wrapper functions for RInstance
+
+`RInstance_iri` <- function(self) {
+  function() {
+    .Call(savvy_RInstance_iri__impl, `self`)
+  }
+}
+
+`.savvy_wrap_RInstance` <- function(ptr) {
+  e <- new.env(parent = emptyenv())
+  e$.ptr <- ptr
+  e$`iri` <- `RInstance_iri`(ptr)
+
+  class(e) <- c("maplibr::RInstance", "RInstance", "savvy_maplibr__sealed")
+  e
+}
+
+
+#' An OTTR template instance: a call to a template with concrete arguments.
+#' Mirrors py_maplib's `Instance` (lib/templates/src/python.rs:245-288).
+#'
+#' @export
+`RInstance` <- new.env(parent = emptyenv())
+
+### associated functions for RInstance
+
+`RInstance`$`new` <- function(`template_iri`, `arguments`, `list_expander` = NULL) {
+  .savvy_wrap_RInstance(.Call(savvy_RInstance_new__impl, `template_iri`, `arguments`, `list_expander`))
+}
+
+
+class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
+
+#' @export
+`print.maplibr::RInstance__bundle` <- function(x, ...) {
+  cat('maplibr::RInstance\n')
 }
 
 ### wrapper functions for RModel
@@ -225,5 +357,94 @@ class(`RModel`) <- c("maplibr::RModel__bundle", "savvy_maplibr__sealed")
 #' @export
 `print.maplibr::RModel__bundle` <- function(x, ...) {
   cat('maplibr::RModel\n')
+}
+
+### wrapper functions for RParameter
+
+
+`.savvy_wrap_RParameter` <- function(ptr) {
+  e <- new.env(parent = emptyenv())
+  e$.ptr <- ptr
+
+
+  class(e) <- c("maplibr::RParameter", "RParameter", "savvy_maplibr__sealed")
+  e
+}
+
+
+#' An OTTR template parameter. Mirrors py_maplib's `Parameter`
+#' (lib/templates/src/python.rs:21-167) -- `rdf_type` here only supports a
+#' basic (non-nested, non-list) RDF type, given as a datatype/class IRI
+#' string; PType::Lub/List/NEList and RDFType.Nested()/Multi() are not yet
+#' ported (they need the RDFType port, maplib-snz's remaining scope).
+#'
+#' @export
+`RParameter` <- new.env(parent = emptyenv())
+
+### associated functions for RParameter
+
+`RParameter`$`new` <- function(`variable_name`, `optional`, `allow_blank`, `rdf_type_iri` = NULL, `default_value` = NULL) {
+  `default_value` <- .savvy_extract_ptr(`default_value`, "maplibr::RConstantTerm")
+  .savvy_wrap_RParameter(.Call(savvy_RParameter_new__impl, `variable_name`, `optional`, `allow_blank`, `rdf_type_iri`, `default_value`))
+}
+
+
+class(`RParameter`) <- c("maplibr::RParameter__bundle", "savvy_maplibr__sealed")
+
+#' @export
+`print.maplibr::RParameter__bundle` <- function(x, ...) {
+  cat('maplibr::RParameter\n')
+}
+
+### wrapper functions for RTemplate
+
+`RTemplate_instance` <- function(self) {
+  function(`arguments`, `list_expander` = NULL) {
+    .savvy_wrap_RInstance(.Call(savvy_RTemplate_instance__impl, `self`, `arguments`, `list_expander`))
+  }
+}
+
+`RTemplate_iri` <- function(self) {
+  function() {
+    .Call(savvy_RTemplate_iri__impl, `self`)
+  }
+}
+
+`RTemplate_print_string` <- function(self) {
+  function() {
+    .Call(savvy_RTemplate_print_string__impl, `self`)
+  }
+}
+
+`.savvy_wrap_RTemplate` <- function(ptr) {
+  e <- new.env(parent = emptyenv())
+  e$.ptr <- ptr
+  e$`instance` <- `RTemplate_instance`(ptr)
+  e$`iri` <- `RTemplate_iri`(ptr)
+  e$`print_string` <- `RTemplate_print_string`(ptr)
+
+  class(e) <- c("maplibr::RTemplate", "RTemplate", "savvy_maplibr__sealed")
+  e
+}
+
+
+#' An OTTR template: a named, parameterized set of instance patterns.
+#' Mirrors py_maplib's `Template` (lib/templates/src/python.rs:291-402).
+#'
+#' @export
+`RTemplate` <- new.env(parent = emptyenv())
+
+### associated functions for RTemplate
+
+`RTemplate`$`new` <- function(`iri`, `parameters`, `instances`) {
+  .savvy_wrap_RTemplate(.Call(savvy_RTemplate_new__impl, `iri`, `parameters`, `instances`))
+}
+
+
+class(`RTemplate`) <- c("maplibr::RTemplate__bundle", "savvy_maplibr__sealed")
+
+#' @export
+`print.maplibr::RTemplate__bundle` <- function(x, ...) {
+  cat('maplibr::RTemplate\n')
 }
 
