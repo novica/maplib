@@ -12,7 +12,7 @@ test_that("vocab lists have the expected size and are built at load time", {
 test_that("xsd/rdf/rdfs/owl constants resolve to the correct IRIs", {
   expect_equal(xsd$dateTime@iri, "http://www.w3.org/2001/XMLSchema#dateTime")
   expect_equal(xsd$anyURI@iri, "http://www.w3.org/2001/XMLSchema#anyURI")
-  expect_equal(xsd$int@iri, "http://www.w3.org/2001/XMLSchema#int")
+  expect_equal(xsd$int_@iri, "http://www.w3.org/2001/XMLSchema#int")
   expect_equal(rdf$type@iri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
   expect_equal(rdf$langString@iri, "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString")
   expect_equal(rdfs$subClassOf@iri, "http://www.w3.org/2000/01/rdf-schema#subClassOf")

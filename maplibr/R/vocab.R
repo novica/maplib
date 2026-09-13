@@ -30,7 +30,7 @@ xsd <- NULL
     `double` = IRI("http://www.w3.org/2001/XMLSchema#double"),
     `duration` = IRI("http://www.w3.org/2001/XMLSchema#duration"),
     `float` = IRI("http://www.w3.org/2001/XMLSchema#float"),
-    `int` = IRI("http://www.w3.org/2001/XMLSchema#int"),
+    `int_` = IRI("http://www.w3.org/2001/XMLSchema#int"),
     `integer` = IRI("http://www.w3.org/2001/XMLSchema#integer"),
     `language` = IRI("http://www.w3.org/2001/XMLSchema#language"),
     `long` = IRI("http://www.w3.org/2001/XMLSchema#long"),
