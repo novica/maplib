@@ -19,13 +19,13 @@ Parameter(
 
 \item{allow_blank}{Whether a blank node is an acceptable value (default TRUE).}
 
-\item{rdf_type}{Optional IRI: the parameter's expected RDF datatype/class.}
+\item{rdf_type}{Optional: an IRI (a datatype/class IRI directly) or an
+RDFType, giving the parameter's expected RDF type.}
 
 \item{default_value}{Optional default value: an IRI, BlankNode, or Literal.}
 }
 \description{
 Mirrors py_maplib's \code{Parameter} (lib/templates/src/python.rs:21-167).
-\code{rdf_type} only supports a basic (non-nested, non-list) RDF type, given as
-a datatype/class IRI -- RDFType.Nested()/Multi() equivalents are not yet
-ported (they need the RDFType port, maplib-snz's remaining scope).
+\code{rdf_type} only supports a basic (non-nested, non-list) RDF type --
+\code{RDFType$Nested()} is not ported (see \code{maplibr/R/rdf_type.R}).
 }

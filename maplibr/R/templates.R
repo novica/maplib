@@ -53,14 +53,14 @@ Argument <- S7::new_class(
 #' An OTTR template parameter.
 #'
 #' Mirrors py_maplib's `Parameter` (lib/templates/src/python.rs:21-167).
-#' `rdf_type` only supports a basic (non-nested, non-list) RDF type, given as
-#' a datatype/class IRI -- RDFType.Nested()/Multi() equivalents are not yet
-#' ported (they need the RDFType port, maplib-snz's remaining scope).
+#' `rdf_type` only supports a basic (non-nested, non-list) RDF type --
+#' `RDFType$Nested()` is not ported (see `maplibr/R/rdf_type.R`).
 #'
 #' @param variable A Variable.
 #' @param optional Whether this parameter is optional.
 #' @param allow_blank Whether a blank node is an acceptable value (default TRUE).
-#' @param rdf_type Optional IRI: the parameter's expected RDF datatype/class.
+#' @param rdf_type Optional: an IRI (a datatype/class IRI directly) or an
+#'   RDFType, giving the parameter's expected RDF type.
 #' @param default_value Optional default value: an IRI, BlankNode, or Literal.
 #' @export
 Parameter <- S7::new_class(
@@ -73,12 +73,7 @@ Parameter <- S7::new_class(
                           rdf_type = NULL,
                           default_value = NULL) {
     stopifnot(S7::S7_inherits(variable, Variable))
-    rdf_type_iri <- if (is.null(rdf_type)) {
-      NULL
-    } else {
-      stopifnot(S7::S7_inherits(rdf_type, IRI))
-      rdf_type@iri
-    }
+    rdf_type_iri <- .as_rdf_type_iri(rdf_type)
     default_raw <- if (is.null(default_value)) {
       NULL
     } else {
