@@ -59,6 +59,21 @@ SEXP savvy_import_test_solution_mappings__impl(SEXP c_arg__stream_ptr, SEXP c_ar
     return handle_result(res);
 }
 
+SEXP savvy_validate_blank_node_id__impl(SEXP c_arg__id) {
+    SEXP res = savvy_validate_blank_node_id__ffi(c_arg__id);
+    return handle_result(res);
+}
+
+SEXP savvy_validate_iri__impl(SEXP c_arg__iri) {
+    SEXP res = savvy_validate_iri__ffi(c_arg__iri);
+    return handle_result(res);
+}
+
+SEXP savvy_validate_variable_name__impl(SEXP c_arg__name) {
+    SEXP res = savvy_validate_variable_name__ffi(c_arg__name);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_add_graph__impl(SEXP self__, SEXP c_arg__other, SEXP c_arg__source_graph, SEXP c_arg__target_graph) {
     SEXP res = savvy_RModel_add_graph__ffi(self__, c_arg__other, c_arg__source_graph, c_arg__target_graph);
     return handle_result(res);
@@ -130,6 +145,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_export_test_solution_mappings__impl", (DL_FUNC) &savvy_export_test_solution_mappings__impl, 1},
     {"savvy_import_test_series__impl", (DL_FUNC) &savvy_import_test_series__impl, 1},
     {"savvy_import_test_solution_mappings__impl", (DL_FUNC) &savvy_import_test_solution_mappings__impl, 2},
+    {"savvy_validate_blank_node_id__impl", (DL_FUNC) &savvy_validate_blank_node_id__impl, 1},
+    {"savvy_validate_iri__impl", (DL_FUNC) &savvy_validate_iri__impl, 1},
+    {"savvy_validate_variable_name__impl", (DL_FUNC) &savvy_validate_variable_name__impl, 1},
     {"savvy_RModel_add_graph__impl", (DL_FUNC) &savvy_RModel_add_graph__impl, 4},
     {"savvy_RModel_add_prefixes__impl", (DL_FUNC) &savvy_RModel_add_prefixes__impl, 2},
     {"savvy_RModel_compact__impl", (DL_FUNC) &savvy_RModel_compact__impl, 1},

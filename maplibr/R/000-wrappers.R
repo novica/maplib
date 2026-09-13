@@ -85,6 +85,36 @@ NULL
   .Call(savvy_import_test_solution_mappings__impl, `stream_ptr`, `rdf_node_types_json`)
 }
 
+#' Validate a blank node identifier's syntax (mirrors oxrdf::BlankNode::new,
+#' used by py_maplib's PyBlankNode::new, lib/representation/src/python.rs:531-535).
+#' Raises an R error on invalid syntax; returns nothing on success.
+#'
+#' @param id Blank node identifier, without the leading `_:`.
+#' @export
+`validate_blank_node_id` <- function(`id`) {
+  invisible(.Call(savvy_validate_blank_node_id__impl, `id`))
+}
+
+#' Validate an IRI's syntax (mirrors oxrdf::NamedNode::new, the same check
+#' py_maplib's PyIRI::new uses, lib/representation/src/python.rs:279-282).
+#' Raises an R error on invalid syntax; returns nothing on success.
+#'
+#' @param iri IRI string to validate.
+#' @export
+`validate_iri` <- function(`iri`) {
+  invisible(.Call(savvy_validate_iri__impl, `iri`))
+}
+
+#' Validate a SPARQL variable name's syntax (mirrors oxrdf::Variable::new,
+#' used by py_maplib's PyVariable::new, lib/representation/src/python.rs:340-343).
+#' Raises an R error on invalid syntax; returns nothing on success.
+#'
+#' @param name Variable name, without the leading `?`/`$`.
+#' @export
+`validate_variable_name` <- function(`name`) {
+  invisible(.Call(savvy_validate_variable_name__impl, `name`))
+}
+
 ### wrapper functions for RModel
 
 `RModel_add_graph` <- function(self) {
