@@ -351,13 +351,14 @@ maplib's own compact on-disk format (not an RDF interchange format --
 use \verb{$writes()} for that).
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Model$serialize(path)}
+    \preformatted{Model$serialize(path = NULL)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
-      \item{\code{path}}{Directory to serialize into.}
+      \item{\code{path}}{Directory to serialize into. Defaults to
+"./serialized_triples".}
     }
     \if{html}{\out{</div>}}
   }

@@ -323,7 +323,7 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
 }
 
 `RModel_serialize` <- function(self) {
-  function(`path`) {
+  function(`path` = NULL) {
     invisible(.Call(savvy_RModel_serialize__impl, `self`, `path`))
   }
 }
@@ -378,7 +378,7 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
 
 ### associated functions for RModel
 
-`RModel`$`deserialize` <- function(`path`, `storage_folder` = NULL) {
+`RModel`$`deserialize` <- function(`path` = NULL, `storage_folder` = NULL) {
   .savvy_wrap_RModel(.Call(savvy_RModel_deserialize__impl, `path`, `storage_folder`))
 }
 

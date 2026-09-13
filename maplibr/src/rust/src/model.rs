@@ -347,12 +347,13 @@ impl RModel {
     /// on-disk format (not an RDF interchange format -- use write()/writes()
     /// for that). Mirrors PyModel::serialize, py_maplib/src/py_model.rs:926-934.
     ///
-    /// @param path Directory to serialize into.
+    /// @param path Directory to serialize into. Defaults to
+    ///   "./serialized_triples", matching py_maplib.
     /// @export
-    fn serialize(&self, path: &str) -> savvy::Result<()> {
+    fn serialize(&self, path: Option<&str>) -> savvy::Result<()> {
         let mut inner = self.lock();
         inner
-            .serialize_triples(Path::new(path))
+            .serialize_triples(Path::new(path.unwrap_or("./serialized_triples")))
             .map_err(maplib_error)
     }
 
@@ -456,13 +457,14 @@ impl RModel {
     /// PyModel::deserialize, py_maplib/src/py_model.rs:936-954). This is an
     /// associated function, not a method -- call as `RModel$deserialize(path)`.
     ///
-    /// @param path Directory previously written by serialize().
+    /// @param path Directory previously written by serialize(). Defaults to
+    ///   "./serialized_triples", matching py_maplib.
     /// @param storage_folder Optional folder for on-disk (rather than
     ///   in-memory) triplestore storage.
     /// @export
-    fn deserialize(path: &str, storage_folder: Option<&str>) -> savvy::Result<RModel> {
+    fn deserialize(path: Option<&str>, storage_folder: Option<&str>) -> savvy::Result<RModel> {
         let model = maplib::model::Model::deserialize_triples(
-            Path::new(path),
+            Path::new(path.unwrap_or("./serialized_triples")),
             storage_folder.map(String::from),
         )
         .map_err(maplib_error)?;

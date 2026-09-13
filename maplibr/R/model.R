@@ -204,8 +204,9 @@ Model <- R6::R6Class(
     #' @description Serialize this Model's triples to a directory in
     #' maplib's own compact on-disk format (not an RDF interchange format --
     #' use `$writes()` for that).
-    #' @param path Directory to serialize into.
-    serialize = function(path) {
+    #' @param path Directory to serialize into. Defaults to
+    #'   "./serialized_triples".
+    serialize = function(path = NULL) {
       .rethrow(private$rmodel$serialize(path))
       invisible(self)
     },
@@ -289,6 +290,6 @@ Model <- R6::R6Class(
 # the (already @export'd) Model generator, so users call it as
 # `Model$deserialize(path)` -- mirrors RModel's own associated-function
 # pattern in 000-wrappers.R.
-Model$deserialize <- function(path, storage_folder = NULL) {
+Model$deserialize <- function(path = NULL, storage_folder = NULL) {
   Model$new(.rethrow(RModel$deserialize(path, storage_folder)))
 }

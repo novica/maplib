@@ -42,6 +42,36 @@ test_that("add_prefixes() affects writes() output", {
   expect_match(out, "@prefix ex: <http://example.org/>", fixed = TRUE)
 })
 
+test_that("serialize()/deserialize() no longer require path -- it defaults to \"./serialized_triples\"", {
+  # Before this fix, `path` was a required argument in the underlying Rust
+  # signature -- omitting it would fail immediately with R's own
+  # missing-argument error, before ever reaching serialize_triples()/
+  # deserialize_triples(). It's optional now (defaulting on the Rust side to
+  # "./serialized_triples", matching py_maplib): calling with no path still
+  # errors -- the on-disk store is a closed-source stub in this checkout,
+  # panicking regardless of path -- but not from a missing argument.
+  is_missing_arg_error <- function(msg) grepl("argument", msg, fixed = TRUE) && grepl("missing", msg, fixed = TRUE)
+
+  # serialize() creates real on-disk structure at its (default) path before
+  # panicking in the stub -- run from a scratch directory so this doesn't
+  # leave a "serialized_triples" directory behind in the working tree.
+  scratch_dir <- tempfile("maplibr-test-")
+  dir.create(scratch_dir)
+  old_wd <- setwd(scratch_dir)
+  on.exit({
+    setwd(old_wd)
+    unlink(scratch_dir, recursive = TRUE)
+  }, add = TRUE)
+
+  m <- Model$new()
+  m$reads('<http://a> <http://b> "c" .', format = "ntriples")
+  err <- tryCatch(m$serialize(), error = function(e) conditionMessage(e))
+  expect_false(is_missing_arg_error(err))
+
+  err2 <- tryCatch(Model$deserialize(), error = function(e) conditionMessage(e))
+  expect_false(is_missing_arg_error(err2))
+})
+
 test_that("clone() is disabled -- R6's default shallow clone would share the underlying Mutex", {
   # R6's default clone() only copies the R-level reference to
   # private$rmodel, not the underlying Rust state -- m2 <- m$clone() would
