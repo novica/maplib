@@ -74,7 +74,22 @@ Model <- R6::R6Class(
       if (!inherits(other, "Model")) {
         stop("`other` must be a Model object", call. = FALSE)
       }
-      .rethrow(private$rmodel$add_graph(private$as_rmodel(other), source_graph, target_graph))
+      other_rmodel <- private$as_rmodel(other)
+      # The underlying Rust call locks `other` then `self` in fixed order,
+      # so if both wrap the same Mutex (`other` is `self`, or an aliased
+      # Model sharing its underlying pointer -- e.g. a future clone() that
+      # doesn't deep-copy), it locks the same non-reentrant Mutex twice on
+      # one thread and deadlocks the R session permanently. Compared via
+      # the raw external pointer (`.ptr`), not `identical(self, other)`,
+      # so this also catches two distinct Model wrapper objects that
+      # happen to share one underlying RModel.
+      if (identical(private$rmodel$.ptr, other_rmodel$.ptr)) {
+        stop(
+          "`other` must not be the same underlying Model as `self` -- add_graph(m, m) would deadlock (self and other share one lock)",
+          call. = FALSE
+        )
+      }
+      .rethrow(private$rmodel$add_graph(other_rmodel, source_graph, target_graph))
       invisible(self)
     },
 

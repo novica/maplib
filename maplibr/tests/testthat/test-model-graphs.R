@@ -96,6 +96,15 @@ test_that("add_graph() copies a named graph's triples into another Model", {
   expect_match(m2$writes(format = "ntriples"), '"A"', fixed = TRUE)
 })
 
+test_that("add_graph() refuses to add a Model to itself", {
+  # add_graph()'s underlying Rust call locks other then self in fixed
+  # order; other = self would lock the same non-reentrant Mutex twice on
+  # one thread and hang the R session. Must error instead.
+  m <- Model$new()
+  m$reads(gr1, format = "ntriples")
+  expect_error(m$add_graph(m), "same underlying Model")
+})
+
 test_that("detach_graph() splits a named graph into a new, standalone Model", {
   # Ports test_detach_graph (py_maplib/tests/test_named_graphs.py:102-146).
   ng1 <- "urn:graph:gr1"
