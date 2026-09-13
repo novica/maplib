@@ -16,6 +16,7 @@ SystemRequirements: Cargo (Rust's package manager), rustc
 Collate:
     '000-wrappers.R'
     'terms.R'
+    'vocab.R'
     'templates.R'
     'model.R'
     'zzz.R'
