@@ -105,6 +105,16 @@ test_that("add_graph() refuses to add a Model to itself", {
   expect_error(m$add_graph(m), "same underlying Model")
 })
 
+test_that("add_graph() refuses two distinct Model wrappers sharing one underlying RModel", {
+  # The pointer comparison (not identical(self, other)) exists specifically
+  # to also catch this case: two separate R6 objects wrapping the same
+  # underlying Rust Mutex, as a shallow clone would produce.
+  m <- Model$new()
+  m$reads(gr1, format = "ntriples")
+  aliased <- Model$new(m$.__enclos_env__$private$rmodel)
+  expect_error(m$add_graph(aliased), "same underlying Model")
+})
+
 test_that("detach_graph() splits a named graph into a new, standalone Model", {
   # Ports test_detach_graph (py_maplib/tests/test_named_graphs.py:102-146).
   ng1 <- "urn:graph:gr1"
