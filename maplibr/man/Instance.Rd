@@ -4,12 +4,7 @@
 \alias{Instance}
 \title{An OTTR template instance: a call to a template with concrete arguments.}
 \usage{
-Instance(
-  template_iri = NULL,
-  arguments = NULL,
-  list_expander = NULL,
-  .raw = NULL
-)
+Instance(template_iri, arguments = NULL, list_expander = NULL)
 }
 \arguments{
 \item{template_iri}{An IRI: the template being instantiated.}

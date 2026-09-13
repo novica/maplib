@@ -102,15 +102,29 @@ Instance <- S7::new_class(
   "Instance",
   package = "maplibr",
   properties = list(raw = S7::class_any),
-  constructor = function(template_iri = NULL, arguments = NULL, list_expander = NULL, .raw = NULL) {
-    if (!is.null(.raw)) {
-      return(S7::new_object(S7::S7_object(), raw = .raw))
-    }
+  constructor = function(template_iri, arguments = NULL, list_expander = NULL) {
     stopifnot(S7::S7_inherits(template_iri, IRI))
     arg_ptrs <- lapply(arguments, .as_argument_ptr)
     raw <- RInstance$new(template_iri@iri, arg_ptrs, list_expander)
     S7::new_object(S7::S7_object(), raw = raw)
   }
+)
+
+# Wraps an already-built RInstance (from Template$instance()/make_triple(),
+# which validate their own arguments) as an Instance, without exposing a
+# validation-bypassing raw-pointer parameter on Instance()'s own public
+# constructor. S7's new_object() can only be called from within the literal
+# function registered as some class's constructor -- not from an arbitrary
+# unexported helper, even one Instance()'s own constructor delegates to --
+# so this is a genuine subclass with its own constructor, not just a thin
+# wrapper. Its instances still satisfy S7_inherits(x, Instance) (and base
+# inherits()), since S7 subclass instances carry their full ancestor class
+# vector, so every existing Instance check downstream is unaffected.
+.RawInstance <- S7::new_class(
+  "RawInstance",
+  package = "maplibr",
+  parent = Instance,
+  constructor = function(raw) S7::new_object(S7::S7_object(), raw = raw)
 )
 
 #' The IRI of the template an Instance calls.
@@ -169,7 +183,7 @@ instantiate <- S7::new_generic("instantiate", "template")
 S7::method(instantiate, Template) <- function(template, arguments, list_expander = NULL) {
   arg_ptrs <- lapply(arguments, .as_argument_ptr)
   raw <- template@raw$instance(arg_ptrs, list_expander)
-  Instance(.raw = raw)
+  .RawInstance(raw)
 }
 
 #' Build an rdf:type-style Triple instance.
@@ -187,5 +201,5 @@ Triple <- function(subject, predicate, object, list_expander = NULL) {
   p <- Argument(predicate)
   o <- Argument(object)
   raw <- make_triple(s@raw, p@raw, o@raw, list_expander)
-  Instance(.raw = raw)
+  .RawInstance(raw)
 }

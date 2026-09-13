@@ -63,3 +63,21 @@ test_that("Argument passthrough: passing an existing Argument returns it unchang
   a2 <- Argument(a)
   expect_identical(a, a2)
 })
+
+test_that("Instance() no longer accepts a validation-bypassing .raw argument", {
+  # Regression test: .raw used to be a real, exported, documented parameter
+  # of Instance()'s own public constructor -- a validation-bypassing escape
+  # hatch, needed internally by instantiate()/Triple() to wrap an
+  # already-built RInstance, but with no business being publicly callable.
+  # It's now a private, unexported subclass (.RawInstance) instead.
+  expect_error(Instance(.raw = "anything"))
+  expect_false(".raw" %in% names(formals(Instance)))
+})
+
+test_that("Triple() (via the private RawInstance subclass) builds a valid, checkable Instance", {
+  ex <- Prefix("http://example.org/", "ex")
+  inst <- Triple(suf(ex, "s"), suf(ex, "p"), suf(ex, "o"))
+  expect_true(S7::S7_inherits(inst, Instance))
+  expect_true(inherits(inst, "maplibr::Instance")) # base inherits() too, not just S7_inherits()
+  expect_equal(instance_template_iri(inst)@iri, "http://ns.ottr.xyz/0.4/Triple")
+})
