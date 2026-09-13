@@ -75,6 +75,31 @@ test_that("map() with a zero-row data.frame is a no-op", {
   expect_equal(m$size(), 0)
 })
 
+test_that("map() treats a template IRI containing '::' as a plain reference, not a doc string", {
+  # Regression test for roborev job 22/24: .resolve_template_iri used to
+  # discriminate a doc string from a bare IRI by checking for a literal
+  # "::" substring, which would misclassify a real IRI containing "::"
+  # (e.g. some URN forms) as a doc string and send it to
+  # add_template_string(), raising a confusing stOTTR parse error instead
+  # of using it as a plain reference.
+  ex <- Prefix("http://example.net/ns#", "ex")
+  iri_with_colons <- "http://example.net/ns#Example::Template"
+  my_value <- Variable("MyValue")
+  template <- Template(
+    iri = IRI(iri_with_colons),
+    parameters = list(Parameter(my_value)),
+    instances = list(Triple(suf(ex, "myObject"), suf(ex, "hasValue"), my_value))
+  )
+  m <- Model$new()
+  m$add_template(template)
+
+  # Passed as a plain character string (not the Template object) so it goes
+  # through the doc-string/IRI discriminator in .resolve_template_iri.
+  m$map(iri_with_colons, data.frame(MyValue = "A"))
+  df <- m$query("SELECT ?o WHERE { <http://example.net/ns#myObject> <http://example.net/ns#hasValue> ?o }")
+  expect_equal(df$o, "A")
+})
+
 test_that("add_template()/map() reject an unrecognized `template` argument", {
   m <- Model$new()
   expect_error(m$add_template(42), "Template")
