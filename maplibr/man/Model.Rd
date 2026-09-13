@@ -259,7 +259,9 @@ left for later.
     \if{html}{\out{</div>}}
   }
   \subsection{Returns}{
-    The number of interesting inference rules applied.
+    The number of new triples inferred (a triple count, not a rule
+count -- Triplestore::interesting_rdfs_rules sums per-rule
+inserted-triple counts).
   }
 }
 

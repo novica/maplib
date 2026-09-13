@@ -60,6 +60,11 @@ test_that("include_transient controls whether inferred triples are visible to qu
 
   with_transient <- m$query("SELECT * WHERE { ?s ?p ?o }", include_transient = TRUE)
   without_transient <- m$query("SELECT * WHERE { ?s ?p ?o }", include_transient = FALSE)
+  # n is a count of newly-inserted triples (Triplestore::interesting_rdfs_rules,
+  # lib/triplestore/src/rdfs_inferencing.rs:170, sums per-rule inserted-triple
+  # counts), not a count of rules applied, despite Model$infer_rdfs's own doc
+  # comment saying "the number of interesting inference rules applied" -- so
+  # this equality is guaranteed, not coincidental.
   expect_equal(nrow(with_transient), nrow(without_transient) + n)
 })
 

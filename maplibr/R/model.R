@@ -120,7 +120,9 @@ Model <- R6::R6Class(
 
     #' @description Run RDFS inference over a graph in place.
     #' @param graph Optional named graph IRI to infer over (default graph if NULL).
-    #' @return The number of interesting inference rules applied.
+    #' @return The number of new triples inferred (a triple count, not a rule
+    #'   count -- Triplestore::interesting_rdfs_rules sums per-rule
+    #'   inserted-triple counts).
     infer_rdfs = function(graph = NULL) {
       .rethrow(private$rmodel$infer_rdfs(graph))
     },
@@ -160,7 +162,14 @@ Model <- R6::R6Class(
 # possible type (e.g. "I" for IRI, "B" for blank node, the datatype IRI for
 # a literal; see MULTI_IRI_DT/MULTI_BLANK_DT, lib/representation/src/
 # multitype.rs:11-13), with exactly one non-NA per row. Collapses each such
-# column into a single vector by coalescing across its sub-columns.
+# column into a single vector by coalescing across its sub-columns via
+# ifelse(), which is safe today only because every sub-column is plain
+# character (IRI/blank-node id/literal all surface as strings via
+# format_native_columns) -- ifelse() silently coerces on a type mismatch, so
+# if a future multi-typed column ever carried a non-character sub-column
+# (e.g. a natively-typed numeric literal), values could be silently
+# mangled. Revisit with an explicit type check (or vctrs::vec_coalesce) if
+# native-typed literal columns are ever added.
 .collapse_multitype_columns <- function(df) {
   for (col in names(df)) {
     if (is.data.frame(df[[col]])) {

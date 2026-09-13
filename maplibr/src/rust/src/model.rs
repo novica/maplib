@@ -313,9 +313,11 @@ impl RModel {
         })
     }
 
-    /// Run RDFS inference over a graph in place, returning the number of
-    /// interesting inference rules applied (mirrors PyModel::infer_rdfs,
-    /// py_maplib/src/py_model.rs:903-916).
+    /// Run RDFS inference over a graph in place, returning the number of new
+    /// triples inferred -- a triple count, not a rule count
+    /// (Triplestore::interesting_rdfs_rules, lib/triplestore/src/
+    /// rdfs_inferencing.rs, sums per-rule inserted-triple counts) -- mirrors
+    /// PyModel::infer_rdfs (py_maplib/src/py_model.rs:903-916).
     ///
     /// @param graph Optional named graph IRI to infer over (default graph if NULL).
     /// @export
