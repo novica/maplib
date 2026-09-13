@@ -206,7 +206,14 @@ Model <- R6::R6Class(
         .rethrow(private$rmodel$add_template(template@raw))
         template@iri@iri
       } else if (is.character(template) && length(template) == 1) {
-        if (grepl("::", template, fixed = TRUE)) {
+        # Discriminates a doc string from a bare IRI by the presence of a
+        # "{" instance-block brace: every stOTTR document has one (its
+        # `[params] :: { ... }` body), and "{" is never a legal IRI
+        # character (RFC 3987), so a real template IRI can never contain
+        # one -- unlike an earlier "::" substring check (roborev job 22),
+        # which would misclassify a bare IRI containing "::" (e.g. some URN
+        # forms) as a doc string.
+        if (grepl("{", template, fixed = TRUE)) {
           .rethrow(private$rmodel$add_template_string(template))
         } else {
           template
