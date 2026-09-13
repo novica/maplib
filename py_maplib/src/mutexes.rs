@@ -636,7 +636,7 @@ pub(crate) fn write_triples_mutex(
     match format {
         ExtendedRdfFormat::Normal(format) => {
             inner
-                .write_triples(&mut actual_file, &named_graph, format, prefixes.as_ref(), false)
+                .write_triples(&mut actual_file, &named_graph, format, prefixes.as_ref())
                 .map_err(PyMaplibError::from)?;
         }
         ExtendedRdfFormat::HDT => {
@@ -731,7 +731,7 @@ pub(crate) fn writes_mutex(
     let graph = parse_optional_named_node(graph)?;
     let named_graph = NamedGraph::from_maybe_named_node(graph.as_ref());
     inner
-        .write_triples(&mut out, &named_graph, format, prefixes.as_ref(), false)
+        .write_triples(&mut out, &named_graph, format, prefixes.as_ref())
         .map_err(PyMaplibError::from)?;
     Ok(String::from_utf8(out).unwrap())
 }

@@ -217,17 +217,8 @@ impl RModel {
     ///
     /// @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
     /// @param graph Optional named graph IRI to write (default graph if NULL).
-    /// @param include_transient Whether to also serialize transient (e.g.
-    ///   inferred) triples. Defaults to FALSE. Not supported together with
-    ///   format = "turtle" (errors) -- pretty Turtle output doesn't
-    ///   currently support merging in transient triples.
     /// @export
-    fn writes(
-        &self,
-        format: Option<&str>,
-        graph: Option<&str>,
-        include_transient: Option<bool>,
-    ) -> savvy::Result<savvy::Sexp> {
+    fn writes(&self, format: Option<&str>, graph: Option<&str>) -> savvy::Result<savvy::Sexp> {
         let format = format
             .map(resolve_normal_format)
             .transpose()?
@@ -236,13 +227,7 @@ impl RModel {
         let mut inner = self.lock();
         let mut out = Vec::new();
         inner
-            .write_triples(
-                &mut out,
-                &named_graph,
-                format,
-                None,
-                include_transient.unwrap_or(false),
-            )
+            .write_triples(&mut out, &named_graph, format, None)
             .map_err(maplib_error)?;
         String::from_utf8(out)
             .map_err(crate::errors::runtime_error)?

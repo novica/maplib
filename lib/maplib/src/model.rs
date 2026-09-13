@@ -529,14 +529,13 @@ impl Model {
         graph: &NamedGraph,
         rdf_format: RdfFormat,
         prefixes: Option<&HashMap<String, NamedNode>>,
-        include_transient: bool,
     ) -> Result<(), MaplibError> {
         let mut use_prefixes = self.prefixes.clone();
         if let Some(prefixes) = prefixes {
             use_prefixes.extend(prefixes.clone());
         }
         self.triplestore
-            .write_triples(buffer, rdf_format, graph, &use_prefixes, include_transient)
+            .write_triples(buffer, rdf_format, graph, &use_prefixes)
             .map_err(MaplibError::TriplestoreError)?;
         Ok(())
     }

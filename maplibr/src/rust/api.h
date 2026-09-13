@@ -39,7 +39,7 @@ SEXP savvy_RModel_reads__ffi(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEX
 SEXP savvy_RModel_serialize__ffi(SEXP self__, SEXP c_arg__path);
 SEXP savvy_RModel_size__ffi(SEXP self__, SEXP c_arg__graph);
 SEXP savvy_RModel_truncate_graph__ffi(SEXP self__, SEXP c_arg__graph);
-SEXP savvy_RModel_writes__ffi(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph, SEXP c_arg__include_transient);
+SEXP savvy_RModel_writes__ffi(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph);
 
 // methods and associated functions for RParameter
 SEXP savvy_RParameter_new__ffi(SEXP c_arg__variable_name, SEXP c_arg__optional, SEXP c_arg__allow_blank, SEXP c_arg__rdf_type_iri, SEXP c_arg__default_value);

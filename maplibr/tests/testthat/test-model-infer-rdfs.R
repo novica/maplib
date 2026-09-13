@@ -36,34 +36,7 @@ for (dir in rdfs_folders) {
   })
 }
 
-test_that("writes(include_transient = TRUE) serializes inferred triples", {
-  # Confirms the fix for the gap this file used to work around: writes()
-  # used to never serialize transient/inferred triples at all, regardless
-  # of any flag, because Triplestore::write_triples had no include_transient
-  # parameter (unlike the query path).
-  dir <- test_path("testdata", "rdfs", "rdfs2")
-  m <- Model$new()
-  m$reads(read_fixture(file.path(dir, "input.ttl")), format = "turtle")
-  n <- m$infer_rdfs()
-  expect_gt(n, 0)
-
-  without <- m$writes(format = "ntriples")
-  with_transient <- m$writes(format = "ntriples", include_transient = TRUE)
-  expect_gt(nchar(with_transient), nchar(without))
-
-  # rdfs2's fixture: "moon rdfs:domain Planet" + "Mars moon Phobos" entails
-  # "Mars rdf:type Planet", which only the include_transient = TRUE output
-  # should contain.
-  expect_false(grepl("22-rdf-syntax-ns#type", without, fixed = TRUE))
-  expect_match(with_transient, "22-rdf-syntax-ns#type", fixed = TRUE)
-})
-
-test_that("writes(include_transient = TRUE, format = \"turtle\") errors clearly", {
-  # Pretty-Turtle output doesn't merge in transient triples yet -- refuses
-  # rather than silently dropping them.
-  dir <- test_path("testdata", "rdfs", "rdfs2")
-  m <- Model$new()
-  m$reads(read_fixture(file.path(dir, "input.ttl")), format = "turtle")
-  m$infer_rdfs()
-  expect_error(m$writes(format = "turtle", include_transient = TRUE))
-})
+# NOTE: writes() still can't serialize transient/inferred triples at all --
+# Triplestore::write_triples (core engine, not this package) has no
+# include_transient option, unlike the query path. That's a core-engine gap,
+# not maplibr's to fix; flagged for upstream instead of worked around here.
