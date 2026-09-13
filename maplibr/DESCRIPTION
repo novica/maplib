@@ -29,6 +29,10 @@ Collate:
     'templates.R'
     'model.R'
     'zzz.R'
-Suggests: 
-    testthat (>= 3.0.0)
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    igraph
 Config/testthat/edition: 3
+VignetteBuilder: knitr

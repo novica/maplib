@@ -1,0 +1,191 @@
+---
+title: "Getting Started with maplibr"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with maplibr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`maplibr` is an R interface to `maplib`, a Rust RDF knowledge-graph engine
+(the same engine the Python package `py_maplib` wraps). This vignette walks
+through what's implemented today: building a graph, querying it with SPARQL,
+mapping tabular data into RDF with OTTR templates, RDFS inference, and
+managing named graphs.
+
+```{r setup}
+library(maplibr)
+```
+
+## Creating a Model and reading triples
+
+`Model` is the main entry point -- an in-memory RDF knowledge graph.
+
+```{r create-and-read}
+m <- Model$new()
+
+m$reads('
+  <http://example.org/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
+  <http://example.org/Person> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://example.org/Agent> .
+  <http://example.org/alice> <http://example.org/name> "Alice" .
+', format = "ntriples")
+
+m$size()
+```
+
+## Serializing back out
+
+```{r writes}
+cat(m$writes())
+```
+
+Turtle works too:
+
+```{r writes-turtle}
+cat(m$writes(format = "turtle"))
+```
+
+## Querying with SPARQL
+
+`$query()` runs a SPARQL query and returns the result as a data.frame.
+
+```{r query-select}
+m$query("SELECT ?s ?o WHERE { ?s <http://example.org/name> ?o }")
+```
+
+CONSTRUCT queries are supported too, returned as a combined
+subject/predicate/object data.frame:
+
+```{r query-construct}
+m$query("
+  CONSTRUCT { ?s <http://example.org/hasType> ?type }
+  WHERE { ?s a ?type }
+")
+```
+
+## Mapping tabular data into RDF with OTTR templates
+
+`$map()` expands an OTTR template against a data.frame, adding the resulting
+triples to the Model. Templates can be built programmatically...
+
+```{r map-programmatic}
+ex <- Prefix("http://example.org/", "ex")
+my_value <- Variable("MyValue")
+template <- Template(
+  iri = suf(ex, "HasNickname"),
+  parameters = list(Parameter(my_value)),
+  instances = list(Triple(suf(ex, "alice"), suf(ex, "nickname"), my_value))
+)
+
+m$map(template, data.frame(MyValue = c("Ally", "Al")))
+m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/nickname> ?o }")
+```
+
+...or from an stOTTR document string, matching `py_maplib`'s own syntax (see
+the root project's README for the OTTR template language itself):
+
+```{r map-doc-string}
+doc <- '
+@prefix ex:<http://example.org/>.
+ex:HasFriend [?Friend] :: {
+  ottr:Triple(ex:alice, ex:knows, ?Friend)
+} .
+'
+m$add_template(doc)
+m$map("http://example.org/HasFriend", data.frame(Friend = "http://example.org/bob"))
+m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/knows> ?o }")
+```
+
+## RDFS inference
+
+`alice` is a `Person`, and `Person` is a subclass of `Agent` -- RDFS
+inference should let us derive that `alice` is also an `Agent`.
+
+```{r infer}
+n <- m$infer_rdfs()
+n
+```
+
+Inferred triples are *transient* -- kept separately from the main graph, and
+only visible to `$query()` when asked for explicitly (`$writes()` doesn't
+currently support this at all, a core-engine limitation, not an R-wrapper
+one -- see the "Upstream issues" section of the package's development notes):
+
+```{r infer-transient}
+without <- m$query("SELECT * WHERE { ?s ?p ?o }")
+with_transient <- m$query("SELECT * WHERE { ?s ?p ?o }", include_transient = TRUE)
+nrow(without)
+nrow(with_transient)
+```
+
+## Named graphs
+
+Triples can be routed into named graphs, copied between Models, and split
+back out.
+
+```{r graphs}
+m$reads(
+  '<http://example.org/bob> <http://example.org/name> "Bob" .',
+  format = "ntriples",
+  graph = "urn:graph:extra"
+)
+m$size("urn:graph:extra")
+m$size() # default graph, unaffected
+
+m2 <- Model$new()
+m2$add_graph(m)
+m2$size()
+
+sprout <- m$detach_graph(graph = "urn:graph:extra")
+sprout$size()
+m$size("urn:graph:extra") # emptied by the detach
+```
+
+## Prefixes and indexing
+
+```{r prefixes-index}
+m$add_prefixes(list(ex = "http://example.org/"))
+m$create_index()
+```
+
+## Visualizing a graph
+
+`maplibr` has no graph-visualization function of its own, but a query result
+is a plain data.frame, so any R graph package works directly on it.
+
+```{r graph-plot, fig.width=6, fig.height=4.5}
+if (requireNamespace("igraph", quietly = TRUE)) {
+  triples <- m$query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
+  short_label <- function(iri) sub(".*[/#]", "", iri)
+
+  edges <- data.frame(from = short_label(triples$s), to = short_label(triples$o))
+  g <- igraph::graph_from_data_frame(edges, directed = TRUE)
+  igraph::E(g)$label <- short_label(triples$p)
+
+  plot(
+    g,
+    edge.label = igraph::E(g)$label,
+    vertex.size = 32,
+    vertex.color = "lightblue",
+    vertex.label.cex = 0.9,
+    edge.arrow.size = 0.5,
+    layout = igraph::layout_with_fr(g)
+  )
+}
+```
+
+## What doesn't work yet, and why
+
+| Method(s) | Status |
+|---|---|
+| `$writes(include_transient = TRUE)` | Not supported for any format -- the underlying engine's triple-serialization code has no way to include transient/inferred triples, unlike its query path. A core-engine limitation, not specific to this package. |
+| `$validate()` (SHACL) | Not implemented -- also blocked on a licensing question (the root project's README describes SHACL as proprietary, but its source is present and unrestricted in this checkout; not a decision this package can make unilaterally). |
+| `$serialize()` / `$deserialize()` | Wired up correctly, but panic at runtime -- the on-disk storage engine they depend on is a closed-source stub in this checkout. |
+| CIM XML, HDT | Not ported. |
+
+See the package's development notes for the full, current list of known
+issues and their upstream/local status.
