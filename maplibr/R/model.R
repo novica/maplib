@@ -115,10 +115,18 @@ Model <- R6::R6Class(
       Model$new(.rethrow(private$rmodel$detach_graph(preserve_name, graph)))
     },
 
-    #' @description Run a SPARQL SELECT query and return the result as a data.frame.
-    #' Mirrors py_maplib's Model.query() (py_maplib/src/py_model.rs:344-387),
-    #' but only the SELECT case -- CONSTRUCT queries are not yet supported
-    #' (raises a maplibr_argument_error), see maplib-l2j.
+    #' @description Run a SPARQL SELECT or CONSTRUCT query and return the
+    #' result as a data.frame. Mirrors py_maplib's Model.query()
+    #' (py_maplib/src/py_model.rs:344-387). For CONSTRUCT, every matched
+    #' triple pattern's results are concatenated into one combined
+    #' subject/predicate/object data.frame (py_maplib instead returns one
+    #' data.frame per pattern, as a Python list -- not done here since a
+    #' single query() call always returns exactly one data.frame). Subject
+    #' and object values are always returned as plain strings for CONSTRUCT
+    #' results (unlike SELECT, which preserves each column's native type
+    #' where a single type applies) -- different patterns can produce
+    #' different column types, which a single concatenated data.frame can't
+    #' represent without collapsing to a common type regardless.
     #' @param sparql The SPARQL query string.
     #' @param graph Optional named graph IRI to restrict the query to (searches
     #'   across the whole store if NULL).

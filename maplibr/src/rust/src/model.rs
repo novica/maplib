@@ -4,8 +4,17 @@ use crate::templates::RTemplate;
 use maplib::model::MapOptions;
 use oxrdf::NamedNode;
 use oxrdfio::RdfFormat;
-use polars::prelude::IntoLazy;
+use polars::prelude::{
+    coalesce, col, concat, Column, DataFrame, DataType, Expr, IntoLazy, Series, UnionArgs,
+};
+use representation::cats::LockedCats;
 use representation::dataset::NamedGraph;
+use representation::rdf_to_polars::rdf_named_node_to_polars_literal_value;
+use representation::solution_mapping::EagerSolutionMappings;
+use representation::{
+    BaseRDFNodeType, RDFNodeState, LANG_STRING_VALUE_FIELD, OBJECT_COL_NAME, PREDICATE_COL_NAME,
+    SUBJECT_COL_NAME,
+};
 use savvy::{savvy, ListSexp, Sexp};
 use std::collections::HashMap;
 use std::path::Path;
@@ -50,6 +59,175 @@ fn parse_query_graph(graph: Option<&str>) -> savvy::Result<Option<NamedGraph>> {
             Ok(NamedGraph::from_maybe_named_node(Some(&nn)))
         })
         .transpose()
+}
+
+/// Flattens a CONSTRUCT query's per-pattern results (each pattern's own
+/// solution mappings, plus a constant predicate when the pattern used one
+/// literally rather than binding it, e.g. `CONSTRUCT { ?s a ?type }`) into a
+/// single subject/predicate/object `EagerSolutionMappings`, matching
+/// `RModel::query()`'s single-DataFrame-per-call design. Mirrors py_maplib's
+/// own per-pattern handling (`query_to_result`, py_maplib/src/lib.rs:235-263)
+/// for adding the constant predicate column, but concatenates every
+/// pattern's rows into one combined DataFrame instead of returning a
+/// separate DataFrame per pattern -- py_maplib can return a heterogeneous
+/// Python list; a single R data.frame per query() call cannot.
+///
+/// Deliberately simplified relative to `query()`'s SELECT path: every
+/// pattern's subject/predicate/object columns are cast to plain strings
+/// before concatenating, rather than preserved as natively-typed (e.g.
+/// integer/date) or per-row multi-typed columns. Different CONSTRUCT
+/// patterns can produce genuinely different column dtypes (one pattern's
+/// object might be an integer literal, another's a string), which a single
+/// concatenated DataFrame can't represent without collapsing to one common
+/// type anyway -- so the `rdf_node_types` side-channel reports predicate as
+/// IRI (always true per the CONSTRUCT grammar) and subject/object as
+/// untyped, rather than claiming a precision this can't actually preserve.
+fn construct_result_to_solution_mappings(
+    groups: Vec<(EagerSolutionMappings, Option<NamedNode>)>,
+    global_cats: LockedCats,
+) -> savvy::Result<EagerSolutionMappings> {
+    let mut lfs = Vec::with_capacity(groups.len());
+    for (sm, predicate) in groups {
+        let EagerSolutionMappings {
+            mappings,
+            mut rdf_node_types,
+        } = sm;
+        // A pattern's own subject/object binds against a WHERE clause
+        // variable, which is very commonly multi-typed (its RDF node type
+        // can vary by row, e.g. one row's ?o is a string, another's an
+        // integer) -- format_native_columns represents that as a Struct
+        // column (one field per possible type, at most one non-null per
+        // row), the same shape query()'s SELECT path sends to R for
+        // R-side collapsing (.collapse_multitype_columns). That collapsing
+        // has to happen here instead, before casting to String and
+        // concatenating: a Struct column can't be cast to String directly
+        // (confirmed live -- it silently casts every row to NA rather than
+        // erroring), and each pattern's own R-side round trip is skipped
+        // for CONSTRUCT (only the final combined frame goes to R).
+        let subject_state = rdf_node_types.get(SUBJECT_COL_NAME).cloned();
+        let object_state = rdf_node_types.get(OBJECT_COL_NAME).cloned();
+        let mut lf = representation::formatting::format_native_columns(
+            mappings.lazy(),
+            &mut rdf_node_types,
+            global_cats.clone(),
+        );
+        if let Some(state) = subject_state {
+            lf = lf.with_column(flatten_to_string(SUBJECT_COL_NAME, &state));
+        }
+        if let Some(state) = object_state {
+            lf = lf.with_column(flatten_to_string(OBJECT_COL_NAME, &state));
+        }
+        if let Some(predicate) = &predicate {
+            lf = lf.with_column(
+                polars::prelude::lit(rdf_named_node_to_polars_literal_value(predicate))
+                    .alias(PREDICATE_COL_NAME),
+            );
+        } else {
+            lf = lf.with_column(col(PREDICATE_COL_NAME).cast(DataType::String));
+        }
+        lf = lf.select([
+            col(SUBJECT_COL_NAME),
+            col(PREDICATE_COL_NAME),
+            col(OBJECT_COL_NAME),
+        ]);
+        lfs.push(lf);
+    }
+    let mappings = if lfs.is_empty() {
+        // A CONSTRUCT template with literally zero triple patterns (valid
+        // but pointless SPARQL) -- build an empty, correctly-shaped
+        // DataFrame rather than concat()ing an empty list of LazyFrames
+        // (which would produce a schema-less frame, not the three empty
+        // String columns export_solution_mappings expects).
+        let empty_col =
+            |name: &str| Column::from(Series::new_empty(name.into(), &DataType::String));
+        DataFrame::new(
+            0,
+            vec![
+                empty_col(SUBJECT_COL_NAME),
+                empty_col(PREDICATE_COL_NAME),
+                empty_col(OBJECT_COL_NAME),
+            ],
+        )
+        .map_err(|e| crate::errors::runtime_error(e.to_string()))?
+    } else {
+        concat(
+            lfs,
+            UnionArgs {
+                parallel: true,
+                rechunk: true,
+                ..Default::default()
+            },
+        )
+        .map_err(|e| crate::errors::runtime_error(e.to_string()))?
+        .collect()
+        .map_err(|e| crate::errors::runtime_error(e.to_string()))?
+    };
+
+    let rdf_node_types = HashMap::from([
+        (
+            SUBJECT_COL_NAME.to_string(),
+            BaseRDFNodeType::None.into_default_input_rdf_node_state(),
+        ),
+        (
+            PREDICATE_COL_NAME.to_string(),
+            BaseRDFNodeType::IRI.into_default_input_rdf_node_state(),
+        ),
+        (
+            OBJECT_COL_NAME.to_string(),
+            BaseRDFNodeType::None.into_default_input_rdf_node_state(),
+        ),
+    ]);
+    Ok(EagerSolutionMappings {
+        mappings,
+        rdf_node_types,
+    })
+}
+
+/// Flattens `col(name)` -- already run through `format_native_columns`, so
+/// either a single decoded column or (if `state.is_multi()`) a Struct with
+/// one field per possible type -- down to one plain String column. For a
+/// multi-typed column, coalesces across the Struct's fields (named per
+/// `BaseRDFNodeType::field_col_name()`, matching exactly what
+/// `expression_to_native`'s multi branch built them as; the lang-string
+/// type is the one exception, itself a 2-field value/lang Struct rather
+/// than a single field, hence the `LANG_STRING_VALUE_FIELD` special case --
+/// its language tag is dropped here, same simplification as
+/// `.collapse_multitype_columns` on the R side), each field individually
+/// cast to String first so mismatched underlying dtypes (e.g. an integer
+/// field alongside a string field) don't need a common supertype.
+fn flatten_to_string(name: &str, state: &RDFNodeState) -> Expr {
+    if !state.is_multi() {
+        // A single-typed rdf:langString column is *also* Struct-shaped
+        // (value + language tag fields, not one flat column) --
+        // expression_to_native's non-multi branch itself falls back to
+        // as_struct(exprs) whenever the base type needs more than one
+        // expression, which is exactly the lang-string case.
+        return if state.is_literal() && state.get_base_type().unwrap().is_lang_string() {
+            col(name)
+                .struct_()
+                .field_by_name(LANG_STRING_VALUE_FIELD)
+                .cast(DataType::String)
+                .alias(name)
+        } else {
+            col(name).cast(DataType::String).alias(name)
+        };
+    }
+    let candidates: Vec<Expr> = state
+        .get_sorted_types()
+        .into_iter()
+        .map(|t| {
+            let field = if t.is_lang_string() {
+                LANG_STRING_VALUE_FIELD.to_string()
+            } else {
+                t.field_col_name()
+            };
+            col(name)
+                .struct_()
+                .field_by_name(&field)
+                .cast(DataType::String)
+        })
+        .collect();
+    coalesce(&candidates).alias(name)
 }
 
 /// A maplib knowledge graph model.
@@ -113,10 +291,11 @@ impl RModel {
         (inner.graph_size(&named_graph) as i32).try_into()
     }
 
-    /// Run a SPARQL SELECT query, streaming the result out through the Arrow
-    /// C Stream Interface (mirrors PyModel::query, py_maplib/src/py_model.rs:
-    /// 344-387 -- but only the SELECT case; CONSTRUCT is not yet supported,
-    /// see maplib-l2j).
+    /// Run a SPARQL SELECT or CONSTRUCT query, streaming the result out
+    /// through the Arrow C Stream Interface (mirrors PyModel::query,
+    /// py_maplib/src/py_model.rs:344-387; CONSTRUCT results are flattened
+    /// into one combined subject/predicate/object DataFrame, see
+    /// construct_result_to_solution_mappings).
     ///
     /// @param sparql The SPARQL query string.
     /// @param stream_ptr An external pointer from `nanoarrow::nanoarrow_allocate_array_stream()`.
@@ -181,9 +360,10 @@ impl RModel {
                 };
                 crate::arrow_bridge::export_solution_mappings(sm, stream_ptr)
             }
-            representation::result::QueryResultKind::Construct(_) => Err(argument_error(
-                "CONSTRUCT queries are not yet supported by maplibr's query() -- only SELECT",
-            )),
+            representation::result::QueryResultKind::Construct(groups) => {
+                construct_result_to_solution_mappings(groups, global_cats)
+                    .and_then(|sm| crate::arrow_bridge::export_solution_mappings(sm, stream_ptr))
+            }
         }
     }
 

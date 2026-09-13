@@ -82,3 +82,74 @@ test_that("query() raises a catchable error for invalid SPARQL syntax", {
     class = "maplibr_maplib_error"
   )
 })
+
+test_that("CONSTRUCT with a literal predicate returns a subject/predicate/object data.frame", {
+  m <- Model$new()
+  m$reads(paste(
+    '<http://ex/a> <http://ex/name> "Alice" .',
+    '<http://ex/b> <http://ex/name> "Bob" .',
+    sep = "\n"
+  ), format = "ntriples")
+
+  df <- m$query("CONSTRUCT { ?s <http://ex/hasName> ?o } WHERE { ?s <http://ex/name> ?o }")
+  expect_setequal(names(df), c("subject", "predicate", "object"))
+  expect_equal(nrow(df), 2)
+  expect_true(all(df$predicate == "http://ex/hasName"))
+  expect_setequal(df$object, c("Alice", "Bob"))
+})
+
+test_that("CONSTRUCT with a bound ?p and a row-varying ?o flattens multi-typed values correctly", {
+  # Regression case: ?o here is bound to both a string and an integer
+  # literal across different rows of the SAME pattern -- format_native_
+  # columns represents that as a Struct (one field per possible type), which
+  # must be coalesced down to one string column before concatenating across
+  # patterns, not cast directly (a direct Struct->String cast silently
+  # produces NA for every row instead of erroring).
+  m <- Model$new()
+  m$reads(paste(
+    '<http://ex/a> <http://ex/name> "Alice" .',
+    "<http://ex/a> <http://ex/age> 30 .",
+    sep = "\n"
+  ), format = "turtle")
+
+  df <- m$query("CONSTRUCT { ?s <http://ex/copy> ?o . ?s ?p ?o } WHERE { ?s ?p ?o }")
+  expect_equal(nrow(df), 4)
+  expect_false(any(is.na(df$object)))
+  copy_rows <- df[df$predicate == "http://ex/copy", ]
+  expect_setequal(copy_rows$object, c("Alice", "30"))
+})
+
+test_that("CONSTRUCT preserves a language-tagged literal's value (dropping the language tag)", {
+  m <- Model$new()
+  m$reads('<http://ex/a> <http://ex/label> "hello"@en .', format = "turtle")
+  df <- m$query("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+  expect_equal(df$object, "hello")
+})
+
+test_that("CONSTRUCT with multiple template patterns concatenates all of their rows", {
+  m <- Model$new()
+  m$reads(paste(
+    '<http://ex/a> <http://ex/name> "Alice" .',
+    "<http://ex/a> <http://ex/knows> <http://ex/b> .",
+    sep = "\n"
+  ), format = "ntriples")
+
+  df <- m$query("
+    CONSTRUCT {
+      ?s <http://ex/hasName> ?name .
+      ?s <http://ex/hasFriend> ?friend .
+    } WHERE {
+      ?s <http://ex/name> ?name .
+      ?s <http://ex/knows> ?friend .
+    }
+  ")
+  expect_equal(nrow(df), 2)
+  expect_setequal(df$predicate, c("http://ex/hasName", "http://ex/hasFriend"))
+})
+
+test_that("a CONSTRUCT query matching nothing returns zero rows, not an error", {
+  m <- Model$new()
+  df <- m$query("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+  expect_equal(nrow(df), 0)
+  expect_setequal(names(df), c("subject", "predicate", "object"))
+})
