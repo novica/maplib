@@ -41,3 +41,14 @@ test_that("add_prefixes() affects writes() output", {
   out <- m$writes(format = "turtle")
   expect_match(out, "@prefix ex: <http://example.org/>", fixed = TRUE)
 })
+
+test_that("clone() is disabled -- R6's default shallow clone would share the underlying Mutex", {
+  # R6's default clone() only copies the R-level reference to
+  # private$rmodel, not the underlying Rust state -- m2 <- m$clone() would
+  # look independent while actually sharing the same mutex-guarded
+  # triplestore. cloneable = FALSE removes $clone() entirely rather than
+  # leaving a misleading shallow one in place.
+  m <- Model$new()
+  expect_null(m$clone)
+  expect_error(m$clone())
+})

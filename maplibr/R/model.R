@@ -8,6 +8,18 @@
 #' @export
 Model <- R6::R6Class(
   "Model",
+  # R6's default clone() is a shallow copy: it would copy the R-level
+  # reference to `private$rmodel` (a savvy external pointer wrapping a Rust
+  # `Mutex<maplib::model::Model>`), not the underlying Rust state itself --
+  # so `m2 <- m$clone()` would look like an independent copy while actually
+  # sharing the same mutex-guarded triplestore, and mutating one would
+  # silently mutate the other with no error or warning. There's no cheap
+  # way to deep-copy the underlying Rust Model (that would need a real
+  # serialize/deserialize round trip, which itself isn't available for an
+  # in-memory Model -- see `$serialize()`). Disabling clone() entirely is
+  # safer than a misleading shallow one; `$detach_graph()` is the supported
+  # way to get an independent Model.
+  cloneable = FALSE,
   public = list(
     #' @description
     #' Create a new, empty Model. Not used to wrap an existing `RModel`

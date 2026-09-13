@@ -28,7 +28,6 @@ returns \code{self} invisibly).
     \item \href{#method-Model-compact}{\code{Model$compact()}}
     \item \href{#method-Model-serialize}{\code{Model$serialize()}}
     \item \href{#method-Model-print}{\code{Model$print()}}
-    \item \href{#method-Model-clone}{\code{Model$clone()}}
   }
 }
 \if{html}{\out{<hr>}}
@@ -378,25 +377,6 @@ use \verb{$writes()} for that).
     \if{html}{\out{<div class="arguments">}}
     \describe{
       \item{\code{...}}{Unused.}
-    }
-    \if{html}{\out{</div>}}
-  }
-}
-
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Model-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-Model-clone}{}}}
-\subsection{\code{Model$clone()}}{
-  The objects of this class are cloneable with this method.
-  \subsection{Usage}{
-    \if{html}{\out{<div class="r">}}
-    \preformatted{Model$clone(deep = FALSE)}
-    \if{html}{\out{</div>}}
-  }
-  \subsection{Arguments}{
-    \if{html}{\out{<div class="arguments">}}
-    \describe{
-      \item{\code{deep}}{Whether to make a deep clone.}
     }
     \if{html}{\out{</div>}}
   }
