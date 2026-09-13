@@ -129,6 +129,16 @@ SEXP savvy_RModel_add_prefixes__impl(SEXP self__, SEXP c_arg__prefixes) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_add_template__impl(SEXP self__, SEXP c_arg__template) {
+    SEXP res = savvy_RModel_add_template__ffi(self__, c_arg__template);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_add_template_string__impl(SEXP self__, SEXP c_arg__doc) {
+    SEXP res = savvy_RModel_add_template_string__ffi(self__, c_arg__doc);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_compact__impl(SEXP self__) {
     SEXP res = savvy_RModel_compact__ffi(self__);
     return handle_result(res);
@@ -154,6 +164,16 @@ SEXP savvy_RModel_infer_rdfs__impl(SEXP self__, SEXP c_arg__graph) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_map__impl(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__stream_ptr, SEXP c_arg__graph, SEXP c_arg__validate_iris) {
+    SEXP res = savvy_RModel_map__ffi(self__, c_arg__template_iri, c_arg__stream_ptr, c_arg__graph, c_arg__validate_iris);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_map_no_data__impl(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__graph, SEXP c_arg__validate_iris) {
+    SEXP res = savvy_RModel_map_no_data__ffi(self__, c_arg__template_iri, c_arg__graph, c_arg__validate_iris);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_new__impl(void) {
     SEXP res = savvy_RModel_new__ffi();
     return handle_result(res);
@@ -174,8 +194,8 @@ SEXP savvy_RModel_serialize__impl(SEXP self__, SEXP c_arg__path) {
     return handle_result(res);
 }
 
-SEXP savvy_RModel_size__impl(SEXP self__) {
-    SEXP res = savvy_RModel_size__ffi(self__);
+SEXP savvy_RModel_size__impl(SEXP self__, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_size__ffi(self__, c_arg__graph);
     return handle_result(res);
 }
 
@@ -234,16 +254,20 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RInstance_new__impl", (DL_FUNC) &savvy_RInstance_new__impl, 3},
     {"savvy_RModel_add_graph__impl", (DL_FUNC) &savvy_RModel_add_graph__impl, 4},
     {"savvy_RModel_add_prefixes__impl", (DL_FUNC) &savvy_RModel_add_prefixes__impl, 2},
+    {"savvy_RModel_add_template__impl", (DL_FUNC) &savvy_RModel_add_template__impl, 2},
+    {"savvy_RModel_add_template_string__impl", (DL_FUNC) &savvy_RModel_add_template_string__impl, 2},
     {"savvy_RModel_compact__impl", (DL_FUNC) &savvy_RModel_compact__impl, 1},
     {"savvy_RModel_create_index__impl", (DL_FUNC) &savvy_RModel_create_index__impl, 1},
     {"savvy_RModel_deserialize__impl", (DL_FUNC) &savvy_RModel_deserialize__impl, 2},
     {"savvy_RModel_detach_graph__impl", (DL_FUNC) &savvy_RModel_detach_graph__impl, 3},
     {"savvy_RModel_infer_rdfs__impl", (DL_FUNC) &savvy_RModel_infer_rdfs__impl, 2},
+    {"savvy_RModel_map__impl", (DL_FUNC) &savvy_RModel_map__impl, 5},
+    {"savvy_RModel_map_no_data__impl", (DL_FUNC) &savvy_RModel_map_no_data__impl, 4},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
     {"savvy_RModel_query__impl", (DL_FUNC) &savvy_RModel_query__impl, 5},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},
-    {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 1},
+    {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 2},
     {"savvy_RModel_truncate_graph__impl", (DL_FUNC) &savvy_RModel_truncate_graph__impl, 2},
     {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
     {"savvy_RParameter_new__impl", (DL_FUNC) &savvy_RParameter_new__impl, 5},

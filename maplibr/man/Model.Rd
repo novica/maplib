@@ -22,6 +22,8 @@ returns \code{self} invisibly).
     \item \href{#method-Model-add_graph}{\code{Model$add_graph()}}
     \item \href{#method-Model-detach_graph}{\code{Model$detach_graph()}}
     \item \href{#method-Model-query}{\code{Model$query()}}
+    \item \href{#method-Model-add_template}{\code{Model$add_template()}}
+    \item \href{#method-Model-map}{\code{Model$map()}}
     \item \href{#method-Model-infer_rdfs}{\code{Model$infer_rdfs()}}
     \item \href{#method-Model-compact}{\code{Model$compact()}}
     \item \href{#method-Model-serialize}{\code{Model$serialize()}}
@@ -54,10 +56,17 @@ is for internal use only.
 \if{html}{\out{<a id="method-Model-size"></a>}}
 \if{latex}{\out{\hypertarget{method-Model-size}{}}}
 \subsection{\code{Model$size()}}{
-  Number of triples in the default graph.
+  Number of triples in a graph.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Model$size()}
+    \preformatted{Model$size(graph = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{graph}}{Optional named graph IRI to count (default graph if NULL).}
+    }
     \if{html}{\out{</div>}}
   }
 }
@@ -238,6 +247,63 @@ SolutionMappings.rdf_types) is attached as the data.frame's
 from the underlying JSON side-channel (maplibr/src/rust/src/
 arrow_bridge.rs) -- a full RDFType-based port of that accessor is
 left for later.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-add_template"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-add_template}{}}}
+\subsection{\code{Model$add_template()}}{
+  Register a Template so it can be referenced by IRI from
+\verb{$map()}.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$add_template(template)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{template}}{A \code{Template} (see \code{templates.R}), or an stOTTR document
+string defining one or more templates.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    The IRI of the registered template, invisibly (for a \code{Template}
+object, this is just \code{template@iri}; for a document string, it's the
+IRI of the first template the document defines).
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map}{}}}
+\subsection{\code{Model$map()}}{
+  Expand a template against a data.frame, adding the
+resulting triples to this Model. Mirrors py_maplib's \code{Model.map()}
+(py_maplib/src/py_model.rs:118-142).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map(template, data = NULL, graph = NULL, validate_iris = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{template}}{A \code{Template} object, the IRI of an already-registered
+template (\verb{$add_template()}), or an stOTTR document string (defining
+exactly the one template to expand -- registered as a side effect).}
+      \item{\code{data}}{Optional data.frame, one row per template instantiation. If
+NULL (or zero rows), the template is expanded once against no
+variables -- only valid for templates whose instances are entirely
+constant terms.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{validate_iris}}{Whether to validate that IRI-typed columns contain
+valid IRIs. Defaults to TRUE.}
+    }
+    \if{html}{\out{</div>}}
   }
 }
 

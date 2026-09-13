@@ -1,10 +1,12 @@
 use crate::errors::argument_error;
 use crate::errors::maplib_error;
+use crate::templates::RTemplate;
+use maplib::model::MapOptions;
 use oxrdf::NamedNode;
 use oxrdfio::RdfFormat;
 use polars::prelude::IntoLazy;
 use representation::dataset::NamedGraph;
-use savvy::{savvy, ListSexp};
+use savvy::{savvy, ListSexp, Sexp};
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Mutex;
@@ -99,13 +101,16 @@ impl RModel {
         })
     }
 
-    /// Number of triples in the default graph.
+    /// Number of triples in a graph (mirrors PyModel::size,
+    /// py_maplib/src/py_model.rs:144-151 / size_mutex, py_maplib/src/
+    /// mutexes.rs:66-73).
     ///
+    /// @param graph Optional named graph IRI to count (default graph if NULL).
     /// @export
-    fn size(&self) -> savvy::Result<savvy::Sexp> {
+    fn size(&self, graph: Option<&str>) -> savvy::Result<savvy::Sexp> {
+        let named_graph = parse_optional_named_graph(graph)?;
         let inner = self.lock();
-        let graph = NamedGraph::from_maybe_named_node(None);
-        (inner.graph_size(&graph) as i32).try_into()
+        (inner.graph_size(&named_graph) as i32).try_into()
     }
 
     /// Run a SPARQL SELECT query, streaming the result out through the Arrow
@@ -348,6 +353,102 @@ impl RModel {
         let mut inner = self.lock();
         inner
             .serialize_triples(Path::new(path))
+            .map_err(maplib_error)
+    }
+
+    /// Register an already-built Template (mirrors `Model::add_template`,
+    /// lib/maplib/src/model.rs:165 -- py_maplib's own `add_template` just
+    /// forwards a parsed `Template` here too, py_model.rs:74-80).
+    ///
+    /// @param template An RTemplate (the raw pointer behind maplibr's S7
+    ///   `Template` class, `template@raw`).
+    /// @export
+    fn add_template(&self, template: &RTemplate) -> savvy::Result<()> {
+        let mut inner = self.lock();
+        inner
+            .add_template(template.inner.clone())
+            .map_err(maplib_error)
+    }
+
+    /// Parse an stOTTR document string and register every template it
+    /// defines (mirrors `Model::add_templates_from_string`,
+    /// lib/maplib/src/model.rs:177-194). Errors if the document defines no
+    /// templates at all, matching py_maplib's own message for that case
+    /// (py_maplib/src/mutexes.rs:132-138).
+    ///
+    /// @param doc An stOTTR document, as a string.
+    /// @returns The IRI of the first template the document defines.
+    /// @export
+    fn add_template_string(&self, doc: &str) -> savvy::Result<savvy::Sexp> {
+        let mut inner = self.lock();
+        let iri = inner
+            .add_templates_from_string(doc)
+            .map_err(maplib_error)?
+            .ok_or_else(|| {
+                argument_error("Template stOTTR document contained no templates")
+            })?;
+        iri.as_str().to_string().try_into()
+    }
+
+    /// Expand a template against a data.frame, adding the resulting triples
+    /// to this Model (mirrors `map_mutex`'s data-driven branch,
+    /// py_maplib/src/mutexes.rs:120-169 -- `Model::expand`,
+    /// lib/maplib/src/model/expansion.rs:58).
+    ///
+    /// @param template_iri IRI of an already-registered template (see
+    ///   `add_template`/`add_template_string`).
+    /// @param stream_ptr A *filled* Arrow C Stream Interface pointer (e.g.
+    ///   from `nanoarrow::as_nanoarrow_array_stream(df)`), one row per
+    ///   template instantiation.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param validate_iris Whether to validate that IRI-typed columns
+    ///   contain valid IRIs. Defaults to TRUE, matching py_maplib.
+    /// @export
+    fn map(
+        &self,
+        template_iri: &str,
+        stream_ptr: Sexp,
+        graph: Option<&str>,
+        validate_iris: Option<bool>,
+    ) -> savvy::Result<()> {
+        let df = crate::arrow_bridge::import_dataframe(stream_ptr)?;
+        if df.height() == 0 {
+            // Matches py_maplib's own map_mutex (py_maplib/src/mutexes.rs:
+            // 158-162): an empty-but-present DataFrame is a silent no-op,
+            // not the same as no DataFrame at all -- expand(None) assumes a
+            // signature with no variables, which isn't true here.
+            return Ok(());
+        }
+        let named_graph = parse_optional_named_graph(graph)?;
+        let options = MapOptions::from_args(named_graph, validate_iris);
+        let mut inner = self.lock();
+        inner
+            .expand(template_iri, Some(df), None, options)
+            .map_err(maplib_error)
+    }
+
+    /// Expand a template with no input data.frame -- for templates whose
+    /// instances are entirely made of constant terms (mirrors `map_mutex`'s
+    /// `df.is_none()` branch, py_maplib/src/mutexes.rs:163-168).
+    ///
+    /// @param template_iri IRI of an already-registered template.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param validate_iris Whether to validate that IRI-typed columns
+    ///   contain valid IRIs. Defaults to TRUE.
+    /// @export
+    fn map_no_data(
+        &self,
+        template_iri: &str,
+        graph: Option<&str>,
+        validate_iris: Option<bool>,
+    ) -> savvy::Result<()> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let options = MapOptions::from_args(named_graph, validate_iris);
+        let mut inner = self.lock();
+        inner
+            .expand(template_iri, None, None, options)
             .map_err(maplib_error)
     }
 

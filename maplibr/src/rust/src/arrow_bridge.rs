@@ -271,6 +271,41 @@ fn export_test_solution_mappings(stream_ptr: Sexp) -> savvy::Result<Sexp> {
     export_solution_mappings(build_test_solution_mappings(), stream_ptr)
 }
 
+/// Read an Arrow C stream from R into a plain `DataFrame` -- the mapping-side
+/// counterpart of `export_solution_mappings`. Used by `RModel::map`/
+/// `RModel::add_template` (maplib-cgd) to bring a plain R data.frame (via
+/// `nanoarrow::as_nanoarrow_array_stream(df)` on the R side) across as the
+/// `data` argument to `Model::expand`. Unlike the export path, there is no
+/// `rdf_node_types` side-channel here -- an input mapping data.frame is
+/// plain tabular data, its RDF typing comes from the target Template's
+/// signature, not from the data itself. Columns are decategorized the same
+/// way `export_solution_mappings` decategorizes on the way out: an R factor
+/// column arrives as a dictionary-encoded Arrow array, and `expand()`'s
+/// column validation (model/expansion/validation.rs) expects plain String
+/// columns, not Categorical/Enum.
+pub(crate) fn import_dataframe(stream_ptr: Sexp) -> savvy::Result<DataFrame> {
+    let mut stream = unsafe {
+        let boxed = Box::new(std::ptr::replace(
+            ExternalPointerSexp::try_from(stream_ptr)?.cast_mut_unchecked::<ArrowArrayStream>(),
+            ArrowArrayStream::empty(),
+        ));
+        ArrowArrayStreamReader::try_new(boxed).map_err(|e| savvy::Error::new(&e.to_string()))?
+    };
+
+    let mut arrays = Vec::new();
+    while let Some(arr) = unsafe { stream.next() } {
+        arrays.push(arr.map_err(|e| savvy::Error::new(&e.to_string()))?);
+    }
+
+    let struct_series = Series::from_arrow_chunks("data".into(), arrays)
+        .map_err(|e| savvy::Error::new(&e.to_string()))?;
+    let struct_series = decategorize(struct_series)?;
+    struct_series
+        .struct_()
+        .map_err(|e| crate::errors::runtime_error(e.to_string()))
+        .map(|ca| ca.clone().unnest())
+}
+
 /// Read an Arrow C stream from R back into a Struct-typed Series, unnest it
 /// back into a DataFrame (`StructChunked::unnest`, the reverse of
 /// `into_struct`), and return a small human-readable summary combining the

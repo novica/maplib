@@ -261,6 +261,19 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_add_template` <- function(self) {
+  function(`template`) {
+    `template` <- .savvy_extract_ptr(`template`, "maplibr::RTemplate")
+    invisible(.Call(savvy_RModel_add_template__impl, `self`, `template`))
+  }
+}
+
+`RModel_add_template_string` <- function(self) {
+  function(`doc`) {
+    .Call(savvy_RModel_add_template_string__impl, `self`, `doc`)
+  }
+}
+
 `RModel_compact` <- function(self) {
   function() {
     invisible(.Call(savvy_RModel_compact__impl, `self`))
@@ -285,6 +298,18 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_map` <- function(self) {
+  function(`template_iri`, `stream_ptr`, `graph` = NULL, `validate_iris` = NULL) {
+    invisible(.Call(savvy_RModel_map__impl, `self`, `template_iri`, `stream_ptr`, `graph`, `validate_iris`))
+  }
+}
+
+`RModel_map_no_data` <- function(self) {
+  function(`template_iri`, `graph` = NULL, `validate_iris` = NULL) {
+    invisible(.Call(savvy_RModel_map_no_data__impl, `self`, `template_iri`, `graph`, `validate_iris`))
+  }
+}
+
 `RModel_query` <- function(self) {
   function(`sparql`, `stream_ptr`, `include_transient`, `graph` = NULL) {
     .Call(savvy_RModel_query__impl, `self`, `sparql`, `stream_ptr`, `include_transient`, `graph`)
@@ -304,8 +329,8 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
 }
 
 `RModel_size` <- function(self) {
-  function() {
-    .Call(savvy_RModel_size__impl, `self`)
+  function(`graph` = NULL) {
+    .Call(savvy_RModel_size__impl, `self`, `graph`)
   }
 }
 
@@ -326,10 +351,14 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   e$.ptr <- ptr
   e$`add_graph` <- `RModel_add_graph`(ptr)
   e$`add_prefixes` <- `RModel_add_prefixes`(ptr)
+  e$`add_template` <- `RModel_add_template`(ptr)
+  e$`add_template_string` <- `RModel_add_template_string`(ptr)
   e$`compact` <- `RModel_compact`(ptr)
   e$`create_index` <- `RModel_create_index`(ptr)
   e$`detach_graph` <- `RModel_detach_graph`(ptr)
   e$`infer_rdfs` <- `RModel_infer_rdfs`(ptr)
+  e$`map` <- `RModel_map`(ptr)
+  e$`map_no_data` <- `RModel_map_no_data`(ptr)
   e$`query` <- `RModel_query`(ptr)
   e$`reads` <- `RModel_reads`(ptr)
   e$`serialize` <- `RModel_serialize`(ptr)

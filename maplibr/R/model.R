@@ -23,9 +23,10 @@ Model <- R6::R6Class(
       private$rmodel <- rmodel
     },
 
-    #' @description Number of triples in the default graph.
-    size = function() {
-      private$rmodel$size()
+    #' @description Number of triples in a graph.
+    #' @param graph Optional named graph IRI to count (default graph if NULL).
+    size = function(graph = NULL) {
+      .rethrow(private$rmodel$size(graph))
     },
 
     #' @description Parse RDF triples from a string into this Model.
@@ -118,6 +119,45 @@ Model <- R6::R6Class(
       df
     },
 
+    #' @description Register a Template so it can be referenced by IRI from
+    #' `$map()`.
+    #' @param template A `Template` (see `templates.R`), or an stOTTR document
+    #'   string defining one or more templates.
+    #' @return The IRI of the registered template, invisibly (for a `Template`
+    #'   object, this is just `template@iri`; for a document string, it's the
+    #'   IRI of the first template the document defines).
+    add_template = function(template) {
+      invisible(private$.resolve_template_iri(template))
+    },
+
+    #' @description Expand a template against a data.frame, adding the
+    #' resulting triples to this Model. Mirrors py_maplib's `Model.map()`
+    #' (py_maplib/src/py_model.rs:118-142).
+    #' @param template A `Template` object, the IRI of an already-registered
+    #'   template (`$add_template()`), or an stOTTR document string (defining
+    #'   exactly the one template to expand -- registered as a side effect).
+    #' @param data Optional data.frame, one row per template instantiation. If
+    #'   NULL (or zero rows), the template is expanded once against no
+    #'   variables -- only valid for templates whose instances are entirely
+    #'   constant terms.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param validate_iris Whether to validate that IRI-typed columns contain
+    #'   valid IRIs. Defaults to TRUE.
+    map = function(template, data = NULL, graph = NULL, validate_iris = NULL) {
+      template_iri <- private$.resolve_template_iri(template)
+      if (is.null(data)) {
+        .rethrow(private$rmodel$map_no_data(template_iri, graph, validate_iris))
+      } else {
+        # A zero-row data.frame is a silent no-op (RModel$map(), mirroring
+        # py_maplib's map_mutex) -- distinct from `data = NULL`, which
+        # expands the template once against no variables at all.
+        stream <- nanoarrow::as_nanoarrow_array_stream(data)
+        .rethrow(private$rmodel$map(template_iri, stream, graph, validate_iris))
+      }
+      invisible(self)
+    },
+
     #' @description Run RDFS inference over a graph in place.
     #' @param graph Optional named graph IRI to infer over (default graph if NULL).
     #' @return The number of new triples inferred (a triple count, not a rule
@@ -145,7 +185,7 @@ Model <- R6::R6Class(
     #' @description Print a short summary of this Model.
     #' @param ... Unused.
     print = function(...) {
-      cat("<Model>", private$rmodel$size(), "triples (default graph)\n")
+      cat("<Model>", private$rmodel$size(NULL), "triples (default graph)\n")
       invisible(self)
     }
   ),
@@ -153,6 +193,30 @@ Model <- R6::R6Class(
     rmodel = NULL,
     as_rmodel = function(model) {
       model$.__enclos_env__$private$rmodel
+    },
+    # Resolves `template` (a Template object, a template IRI, or an stOTTR
+    # document string) to a template IRI, registering it first if needed.
+    # A Template object or document string is always (re-)registered on
+    # every call -- mirrors py_maplib's own map_mutex, which re-registers a
+    # PyTemplate/doc-string `template` argument on every map() call too
+    # (py_maplib/src/mutexes.rs:120-153), rather than requiring a separate
+    # add_template() call first.
+    .resolve_template_iri = function(template) {
+      if (S7::S7_inherits(template, Template)) {
+        .rethrow(private$rmodel$add_template(template@raw))
+        template@iri@iri
+      } else if (is.character(template) && length(template) == 1) {
+        if (grepl("::", template, fixed = TRUE)) {
+          .rethrow(private$rmodel$add_template_string(template))
+        } else {
+          template
+        }
+      } else {
+        stop(
+          "`template` must be a Template, a template IRI, or an stOTTR document string",
+          call. = FALSE
+        )
+      }
     }
   )
 )
