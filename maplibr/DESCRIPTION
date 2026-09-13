@@ -15,6 +15,7 @@ RoxygenNote: 8.0.0
 SystemRequirements: Cargo (Rust's package manager), rustc
 Collate:
     '000-wrappers.R'
+    'errors.R'
     'terms.R'
     'vocab.R'
     'rdf_type.R'

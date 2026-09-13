@@ -9,7 +9,7 @@ use savvy::savvy;
 /// @export
 #[savvy]
 fn validate_iri(iri: &str) -> savvy::Result<()> {
-    NamedNode::new(iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
+    NamedNode::new(iri).map_err(crate::errors::argument_error)?;
     Ok(())
 }
 
@@ -21,7 +21,7 @@ fn validate_iri(iri: &str) -> savvy::Result<()> {
 /// @export
 #[savvy]
 fn validate_variable_name(name: &str) -> savvy::Result<()> {
-    Variable::new(name).map_err(|e| savvy::Error::new(&e.to_string()))?;
+    Variable::new(name).map_err(crate::errors::argument_error)?;
     Ok(())
 }
 
@@ -33,6 +33,6 @@ fn validate_variable_name(name: &str) -> savvy::Result<()> {
 /// @export
 #[savvy]
 fn validate_blank_node_id(id: &str) -> savvy::Result<()> {
-    BlankNode::new(id).map_err(|e| savvy::Error::new(&e.to_string()))?;
+    BlankNode::new(id).map_err(crate::errors::argument_error)?;
     Ok(())
 }

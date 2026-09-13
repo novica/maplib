@@ -1,3 +1,5 @@
+use crate::errors::argument_error;
+use crate::errors::maplib_error;
 use oxrdf::NamedNode;
 use oxrdfio::RdfFormat;
 use representation::dataset::NamedGraph;
@@ -16,7 +18,7 @@ fn resolve_normal_format(format: &str) -> savvy::Result<RdfFormat> {
         "ntriples" => Ok(RdfFormat::NTriples),
         "turtle" => Ok(RdfFormat::Turtle),
         "rdf/xml" | "xml" | "rdfxml" => Ok(RdfFormat::RdfXml),
-        _ => Err(savvy::Error::new(&format!("Unknown format: {}", format))),
+        _ => Err(argument_error(format!("Unknown format: {}", format))),
     }
 }
 
@@ -28,7 +30,7 @@ fn resolve_format(format: &str) -> savvy::Result<ExtendedRdfFormat> {
 
 fn parse_optional_named_graph(graph: Option<&str>) -> savvy::Result<NamedGraph> {
     let nn = graph
-        .map(|g| NamedNode::new(g).map_err(|e| savvy::Error::new(&e.to_string())))
+        .map(|g| NamedNode::new(g).map_err(argument_error))
         .transpose()?;
     Ok(NamedGraph::from_maybe_named_node(nn.as_ref()))
 }
@@ -76,7 +78,7 @@ impl RModel {
         pyo3::Python::initialize();
 
         let model = maplib::model::Model::new(None, None, None, None)
-            .map_err(|e| savvy::Error::new(&e.to_string()))?;
+            .map_err(maplib_error)?;
         Ok(Self {
             inner: Mutex::new(model),
         })
@@ -114,7 +116,7 @@ impl RModel {
                 DEFAULT_TRIPLES_BATCH_SIZE,
                 HashMap::new(),
             )
-            .map_err(|e| savvy::Error::new(&e.to_string()))
+            .map_err(maplib_error)
     }
 
     /// Serialize this Model's triples to a string.
@@ -132,9 +134,9 @@ impl RModel {
         let mut out = Vec::new();
         inner
             .write_triples(&mut out, &named_graph, format, None)
-            .map_err(|e| savvy::Error::new(&e.to_string()))?;
+            .map_err(maplib_error)?;
         String::from_utf8(out)
-            .map_err(|e| savvy::Error::new(&e.to_string()))?
+            .map_err(crate::errors::runtime_error)?
             .try_into()
     }
 
@@ -146,7 +148,7 @@ impl RModel {
         let mut inner = self.lock();
         inner
             .create_index(IndexingOptions::default())
-            .map_err(|e| savvy::Error::new(&e.to_string()))
+            .map_err(maplib_error)
     }
 
     /// Remove all triples from a graph (mirrors truncate_graph_mutex,
@@ -173,7 +175,7 @@ impl RModel {
         let mut parsed = HashMap::new();
         for (name, value) in prefixes.iter() {
             let iri = <&str>::try_from(value)?;
-            let nn = NamedNode::new(iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
+            let nn = NamedNode::new(iri).map_err(argument_error)?;
             parsed.insert(name.to_string(), nn);
         }
         let mut inner = self.lock();
@@ -200,7 +202,7 @@ impl RModel {
         let mut inner = self.lock();
         inner
             .add_graph(&other_inner.triplestore, source_graph, target_graph)
-            .map_err(|e| savvy::Error::new(&e.to_string()))
+            .map_err(maplib_error)
     }
 
     /// Split a graph out of this Model into a brand new, standalone Model
@@ -216,7 +218,7 @@ impl RModel {
         let mut inner = self.lock();
         let sprout = inner
             .detach_graph(&named_graph, preserve_name)
-            .map_err(|e| savvy::Error::new(&e.to_string()))?;
+            .map_err(maplib_error)?;
         Ok(RModel {
             inner: Mutex::new(sprout),
         })
@@ -233,7 +235,7 @@ impl RModel {
         let mut inner = self.lock();
         let n = inner
             .infer_rdfs(&named_graph)
-            .map_err(|e| savvy::Error::new(&e.to_string()))?;
+            .map_err(maplib_error)?;
         (n as i32).try_into()
     }
 
@@ -242,7 +244,7 @@ impl RModel {
     /// @export
     fn compact(&self) -> savvy::Result<()> {
         let mut inner = self.lock();
-        inner.compact().map_err(|e| savvy::Error::new(&e.to_string()))
+        inner.compact().map_err(maplib_error)
     }
 
     /// Serialize this Model's triples to a directory in maplib's own compact
@@ -255,7 +257,7 @@ impl RModel {
         let mut inner = self.lock();
         inner
             .serialize_triples(Path::new(path))
-            .map_err(|e| savvy::Error::new(&e.to_string()))
+            .map_err(maplib_error)
     }
 
     /// Load a Model previously written by serialize() (mirrors
@@ -271,7 +273,7 @@ impl RModel {
             Path::new(path),
             storage_folder.map(String::from),
         )
-        .map_err(|e| savvy::Error::new(&e.to_string()))?;
+        .map_err(maplib_error)?;
         Ok(RModel {
             inner: Mutex::new(model),
         })

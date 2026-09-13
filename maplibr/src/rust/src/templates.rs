@@ -12,7 +12,7 @@ fn parse_list_expander(s: Option<&str>) -> savvy::Result<Option<ListExpanderType
         Some("cross") => Ok(Some(ListExpanderType::Cross)),
         Some("zipMin") => Ok(Some(ListExpanderType::ZipMin)),
         Some("zipMax") => Ok(Some(ListExpanderType::ZipMax)),
-        Some(other) => Err(savvy::Error::new(&format!(
+        Some(other) => Err(crate::errors::argument_error(format!(
             "Unknown list_expander \"{other}\", expected one of \"cross\", \"zipMin\", \"zipMax\""
         ))),
     }
@@ -30,14 +30,14 @@ pub struct RConstantTerm {
 #[savvy]
 impl RConstantTerm {
     fn iri(iri: &str) -> savvy::Result<Self> {
-        let nn = NamedNode::new(iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
+        let nn = NamedNode::new(iri).map_err(crate::errors::argument_error)?;
         Ok(RConstantTerm {
             inner: ConstantTerm::Iri(nn),
         })
     }
 
     fn blank_node(id: &str) -> savvy::Result<Self> {
-        let bn = BlankNode::new(id).map_err(|e| savvy::Error::new(&e.to_string()))?;
+        let bn = BlankNode::new(id).map_err(crate::errors::argument_error)?;
         Ok(RConstantTerm {
             inner: ConstantTerm::BlankNode(bn),
         })
@@ -48,7 +48,7 @@ impl RConstantTerm {
             OxLiteral::new_language_tagged_literal_unchecked(value, language)
         } else {
             let dt =
-                NamedNode::new(datatype_iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
+                NamedNode::new(datatype_iri).map_err(crate::errors::argument_error)?;
             OxLiteral::new_typed_literal(value, dt)
         };
         Ok(RConstantTerm {
@@ -75,7 +75,7 @@ pub struct RArgument {
 #[savvy]
 impl RArgument {
     fn from_variable(name: &str, list_expand: bool) -> savvy::Result<Self> {
-        let v = Variable::new(name).map_err(|e| savvy::Error::new(&e.to_string()))?;
+        let v = Variable::new(name).map_err(crate::errors::argument_error)?;
         Ok(RArgument {
             inner: Argument {
                 list_expand,
@@ -118,12 +118,12 @@ impl RParameter {
         default_value: Option<&RConstantTerm>,
     ) -> savvy::Result<Self> {
         let variable =
-            Variable::new(variable_name).map_err(|e| savvy::Error::new(&e.to_string()))?;
+            Variable::new(variable_name).map_err(crate::errors::argument_error)?;
         let ptype = rdf_type_iri
             .map(|iri| {
                 NamedNode::new(iri)
                     .map(PType::Basic)
-                    .map_err(|e| savvy::Error::new(&e.to_string()))
+                    .map_err(crate::errors::argument_error)
             })
             .transpose()?;
         let default_value =
@@ -157,7 +157,7 @@ impl RInstance {
         list_expander: Option<&str>,
     ) -> savvy::Result<Self> {
         let template_iri =
-            NamedNode::new(template_iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
+            NamedNode::new(template_iri).map_err(crate::errors::argument_error)?;
         let list_expander = parse_list_expander(list_expander)?;
         let mut argument_list = Vec::new();
         for (_, value) in arguments.iter() {
@@ -190,7 +190,7 @@ pub struct RTemplate {
 #[savvy]
 impl RTemplate {
     fn new(iri: &str, parameters: ListSexp, instances: ListSexp) -> savvy::Result<Self> {
-        let iri = NamedNode::new(iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
+        let iri = NamedNode::new(iri).map_err(crate::errors::argument_error)?;
         let mut parameter_list = Vec::new();
         for (_, value) in parameters.iter() {
             let p = <&RParameter>::try_from(value)?;

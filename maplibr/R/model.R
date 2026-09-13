@@ -16,7 +16,7 @@ Model <- R6::R6Class(
     #' @param rmodel Internal use only.
     initialize = function(rmodel = NULL) {
       if (is.null(rmodel)) {
-        rmodel <- RModel$new()
+        rmodel <- .rethrow(RModel$new())
       } else if (!inherits(rmodel, "RModel")) {
         stop("`rmodel` must be an RModel object", call. = FALSE)
       }
@@ -33,7 +33,7 @@ Model <- R6::R6Class(
     #' @param format One of "ntriples", "turtle", "xml" (rdf/xml).
     #' @param graph Optional named graph IRI to read into (default graph if NULL).
     reads = function(s, format, graph = NULL) {
-      private$rmodel$reads(s, format, graph)
+      .rethrow(private$rmodel$reads(s, format, graph))
       invisible(self)
     },
 
@@ -41,19 +41,19 @@ Model <- R6::R6Class(
     #' @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
     #' @param graph Optional named graph IRI to write (default graph if NULL).
     writes = function(format = NULL, graph = NULL) {
-      private$rmodel$writes(format, graph)
+      .rethrow(private$rmodel$writes(format, graph))
     },
 
     #' @description Build the default (non-FTS) indexes.
     create_index = function() {
-      private$rmodel$create_index()
+      .rethrow(private$rmodel$create_index())
       invisible(self)
     },
 
     #' @description Remove all triples from a graph.
     #' @param graph Optional named graph IRI to truncate (default graph if NULL).
     truncate_graph = function(graph = NULL) {
-      private$rmodel$truncate_graph(graph)
+      .rethrow(private$rmodel$truncate_graph(graph))
       invisible(self)
     },
 
@@ -61,7 +61,7 @@ Model <- R6::R6Class(
     #' @param prefixes A named R list of single strings: names are prefixes,
     #'   values are IRIs, e.g. `list(ex = "http://example.org/")`.
     add_prefixes = function(prefixes) {
-      private$rmodel$add_prefixes(prefixes)
+      .rethrow(private$rmodel$add_prefixes(prefixes))
       invisible(self)
     },
 
@@ -73,7 +73,7 @@ Model <- R6::R6Class(
       if (!inherits(other, "Model")) {
         stop("`other` must be a Model object", call. = FALSE)
       }
-      private$rmodel$add_graph(private$as_rmodel(other), source_graph, target_graph)
+      .rethrow(private$rmodel$add_graph(private$as_rmodel(other), source_graph, target_graph))
       invisible(self)
     },
 
@@ -83,19 +83,19 @@ Model <- R6::R6Class(
     #' @param graph Optional named graph IRI to detach (default graph if NULL).
     #' @return A new Model containing only the detached graph.
     detach_graph = function(preserve_name = FALSE, graph = NULL) {
-      Model$new(private$rmodel$detach_graph(preserve_name, graph))
+      Model$new(.rethrow(private$rmodel$detach_graph(preserve_name, graph)))
     },
 
     #' @description Run RDFS inference over a graph in place.
     #' @param graph Optional named graph IRI to infer over (default graph if NULL).
     #' @return The number of interesting inference rules applied.
     infer_rdfs = function(graph = NULL) {
-      private$rmodel$infer_rdfs(graph)
+      .rethrow(private$rmodel$infer_rdfs(graph))
     },
 
     #' @description Compact on-disk storage.
     compact = function() {
-      private$rmodel$compact()
+      .rethrow(private$rmodel$compact())
       invisible(self)
     },
 
@@ -104,7 +104,7 @@ Model <- R6::R6Class(
     #' use `$writes()` for that).
     #' @param path Directory to serialize into.
     serialize = function(path) {
-      private$rmodel$serialize(path)
+      .rethrow(private$rmodel$serialize(path))
       invisible(self)
     },
 
@@ -128,5 +128,5 @@ Model <- R6::R6Class(
 # `Model$deserialize(path)` -- mirrors RModel's own associated-function
 # pattern in 000-wrappers.R.
 Model$deserialize <- function(path, storage_folder = NULL) {
-  Model$new(RModel$deserialize(path, storage_folder))
+  Model$new(.rethrow(RModel$deserialize(path, storage_folder)))
 }
