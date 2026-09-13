@@ -341,8 +341,8 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
 }
 
 `RModel_writes` <- function(self) {
-  function(`format` = NULL, `graph` = NULL) {
-    .Call(savvy_RModel_writes__impl, `self`, `format`, `graph`)
+  function(`format` = NULL, `graph` = NULL, `include_transient` = NULL) {
+    .Call(savvy_RModel_writes__impl, `self`, `format`, `graph`, `include_transient`)
   }
 }
 

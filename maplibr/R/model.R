@@ -53,8 +53,10 @@ Model <- R6::R6Class(
     #' @description Serialize this Model's triples to a string.
     #' @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
     #' @param graph Optional named graph IRI to write (default graph if NULL).
-    writes = function(format = NULL, graph = NULL) {
-      .rethrow(private$rmodel$writes(format, graph))
+    #' @param include_transient Whether to also serialize transient (e.g.
+    #'   inferred) triples. Not supported together with format = "turtle".
+    writes = function(format = NULL, graph = NULL, include_transient = FALSE) {
+      .rethrow(private$rmodel$writes(format, graph, include_transient))
     },
 
     #' @description Build the default (non-FTS) indexes.

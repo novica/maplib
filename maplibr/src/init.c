@@ -204,8 +204,8 @@ SEXP savvy_RModel_truncate_graph__impl(SEXP self__, SEXP c_arg__graph) {
     return handle_result(res);
 }
 
-SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph) {
-    SEXP res = savvy_RModel_writes__ffi(self__, c_arg__format, c_arg__graph);
+SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph, SEXP c_arg__include_transient) {
+    SEXP res = savvy_RModel_writes__ffi(self__, c_arg__format, c_arg__graph, c_arg__include_transient);
     return handle_result(res);
 }
 
@@ -269,7 +269,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 2},
     {"savvy_RModel_truncate_graph__impl", (DL_FUNC) &savvy_RModel_truncate_graph__impl, 2},
-    {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
+    {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 4},
     {"savvy_RParameter_new__impl", (DL_FUNC) &savvy_RParameter_new__impl, 5},
     {"savvy_RTemplate_instance__impl", (DL_FUNC) &savvy_RTemplate_instance__impl, 3},
     {"savvy_RTemplate_iri__impl", (DL_FUNC) &savvy_RTemplate_iri__impl, 1},

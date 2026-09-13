@@ -98,7 +98,7 @@ is for internal use only.
   Serialize this Model's triples to a string.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Model$writes(format = NULL, graph = NULL)}
+    \preformatted{Model$writes(format = NULL, graph = NULL, include_transient = FALSE)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -106,6 +106,8 @@ is for internal use only.
     \describe{
       \item{\code{format}}{One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".}
       \item{\code{graph}}{Optional named graph IRI to write (default graph if NULL).}
+      \item{\code{include_transient}}{Whether to also serialize transient (e.g.
+inferred) triples. Not supported together with format = "turtle".}
     }
     \if{html}{\out{</div>}}
   }

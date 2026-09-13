@@ -1,5 +1,6 @@
 use super::Triplestore;
 use crate::errors::TriplestoreError;
+use crate::storage::Triples;
 use oxrdf::NamedNode;
 use oxrdfio::{RdfFormat, RdfSerializer};
 use polars::prelude::{by_name, col};
@@ -12,7 +13,8 @@ use representation::polars_to_rdf::{
     date_column_to_strings, datetime_column_to_strings, global_df_as_triples,
 };
 use representation::{
-    LANG_STRING_LANG_FIELD, LANG_STRING_VALUE_FIELD, OBJECT_COL_NAME, SUBJECT_COL_NAME,
+    BaseRDFNodeType, LANG_STRING_LANG_FIELD, LANG_STRING_VALUE_FIELD, OBJECT_COL_NAME,
+    SUBJECT_COL_NAME,
 };
 use std::collections::HashMap;
 use std::io::Write;
@@ -24,6 +26,8 @@ mod serializers;
 
 const CHUNK_SIZE: usize = 1_024;
 
+type PredicateTriplesMap = HashMap<NamedNode, HashMap<(BaseRDFNodeType, BaseRDFNodeType), Triples>>;
+
 impl Triplestore {
     pub fn write_triples<W: Write>(
         &mut self,
@@ -31,97 +35,44 @@ impl Triplestore {
         format: RdfFormat,
         graph: &NamedGraph,
         prefixes: &HashMap<String, NamedNode>,
+        include_transient: bool,
     ) -> Result<(), TriplestoreError> {
-        if !self.does_graph_exist(graph) {
+        let has_regular = self.does_graph_exist(graph);
+        let has_transient =
+            include_transient && self.graph_transient_triples_map.contains_key(graph);
+        if !has_regular && !has_transient {
             return Ok(());
         }
         if RdfFormat::NTriples == format {
             let n_threads = THREAD_POOL.current_num_threads();
-            for (predicate, df_map) in self.graph_triples_map.get(graph).unwrap() {
-                let predicate_string = predicate.to_string();
-                let predicate_bytes = predicate_string.as_bytes();
-                for ((subject_type, object_type), tt) in df_map {
-                    let types = if object_type.is_lang_string() {
-                        HashMap::from([
-                            (SUBJECT_COL_NAME.to_string(), subject_type.clone()),
-                            (LANG_STRING_VALUE_FIELD.to_string(), object_type.clone()),
-                            (LANG_STRING_LANG_FIELD.to_string(), object_type.clone()),
-                        ])
-                    } else {
-                        HashMap::from([
-                            (SUBJECT_COL_NAME.to_string(), subject_type.clone()),
-                            (OBJECT_COL_NAME.to_string(), object_type.clone()),
-                        ])
-                    };
-                    for (mut lf, _) in tt.get_lazy_frames(&None, &None)? {
-                        lf = lf.with_columns([
-                            maybe_decode_complex_expr(
-                                col(SUBJECT_COL_NAME),
-                                subject_type,
-                                &subject_type.default_stored_cat_state(),
-                                self.global_cats.clone(),
-                            )
-                            .alias(SUBJECT_COL_NAME),
-                            maybe_decode_complex_expr(
-                                col(OBJECT_COL_NAME),
-                                object_type,
-                                &object_type.default_stored_cat_state(),
-                                self.global_cats.clone(),
-                            )
-                            .alias(OBJECT_COL_NAME),
-                        ]);
-                        if object_type.is_lang_string() {
-                            lf = lf
-                                .unnest(by_name([OBJECT_COL_NAME], true, false), None)
-                                .select([
-                                    col(SUBJECT_COL_NAME),
-                                    col(LANG_STRING_VALUE_FIELD),
-                                    col(LANG_STRING_LANG_FIELD),
-                                ]);
-                        } else {
-                            lf = lf.select([col(SUBJECT_COL_NAME), col(OBJECT_COL_NAME)]);
-                        };
-                        let mut df = lf.collect().unwrap();
-                        if !object_type.is_lang_string() {
-                            convert_datelike_to_string(&mut df, OBJECT_COL_NAME);
-                        }
-
-                        fast_ntriples::write_triples_in_df(
-                            buf,
-                            &df,
-                            predicate_bytes,
-                            &types,
-                            CHUNK_SIZE,
-                            n_threads,
-                        )
-                        .unwrap();
-                    }
+            if let Some(map) = self.graph_triples_map.get(graph) {
+                self.write_ntriples_map(buf, map, n_threads)?;
+            }
+            if has_transient {
+                if let Some(map) = self.graph_transient_triples_map.get(graph) {
+                    self.write_ntriples_map(buf, map, n_threads)?;
                 }
             }
         } else if RdfFormat::Turtle == format {
+            if has_transient {
+                // write_pretty_turtle's blank-node/list nesting logic reads
+                // graph_triples_map directly and isn't set up to merge in a
+                // second (transient) source of triples -- rather than
+                // silently drop them, refuse until that's implemented.
+                return Err(TriplestoreError::WriteTurtleError(
+                    "include_transient is not yet supported when writing pretty Turtle output"
+                        .to_string(),
+                ));
+            }
             self.write_pretty_turtle(buf, graph, prefixes)?;
         } else {
             let mut writer = RdfSerializer::from_format(format).for_writer(buf);
-
-            for (predicate, df_map) in self.graph_triples_map.get(graph).unwrap() {
-                for ((subject_type, object_type), tt) in df_map {
-                    for (lf, _) in tt.get_lazy_frames(&None, &None)? {
-                        let triples = global_df_as_triples(
-                            lf.collect().unwrap(),
-                            subject_type.clone(),
-                            object_type.clone(),
-                            predicate,
-                            self.global_cats.clone(),
-                        );
-                        for t in &triples {
-                            writer.serialize_triple(t).map_err(|x| {
-                                TriplestoreError::WriteTurtleError(format!(
-                                    "Error serializing triple {}: {}",
-                                    t, x
-                                ))
-                            })?;
-                        }
-                    }
+            if let Some(map) = self.graph_triples_map.get(graph) {
+                self.write_generic_map(&mut writer, map)?;
+            }
+            if has_transient {
+                if let Some(map) = self.graph_transient_triples_map.get(graph) {
+                    self.write_generic_map(&mut writer, map)?;
                 }
             }
             writer.finish().map_err(|x| {
@@ -130,6 +81,105 @@ impl Triplestore {
                     x
                 ))
             })?;
+        }
+        Ok(())
+    }
+
+    fn write_ntriples_map<W: Write>(
+        &self,
+        buf: &mut W,
+        map: &PredicateTriplesMap,
+        n_threads: usize,
+    ) -> Result<(), TriplestoreError> {
+        for (predicate, df_map) in map {
+            let predicate_string = predicate.to_string();
+            let predicate_bytes = predicate_string.as_bytes();
+            for ((subject_type, object_type), tt) in df_map {
+                let types = if object_type.is_lang_string() {
+                    HashMap::from([
+                        (SUBJECT_COL_NAME.to_string(), subject_type.clone()),
+                        (LANG_STRING_VALUE_FIELD.to_string(), object_type.clone()),
+                        (LANG_STRING_LANG_FIELD.to_string(), object_type.clone()),
+                    ])
+                } else {
+                    HashMap::from([
+                        (SUBJECT_COL_NAME.to_string(), subject_type.clone()),
+                        (OBJECT_COL_NAME.to_string(), object_type.clone()),
+                    ])
+                };
+                for (mut lf, _) in tt.get_lazy_frames(&None, &None)? {
+                    lf = lf.with_columns([
+                        maybe_decode_complex_expr(
+                            col(SUBJECT_COL_NAME),
+                            subject_type,
+                            &subject_type.default_stored_cat_state(),
+                            self.global_cats.clone(),
+                        )
+                        .alias(SUBJECT_COL_NAME),
+                        maybe_decode_complex_expr(
+                            col(OBJECT_COL_NAME),
+                            object_type,
+                            &object_type.default_stored_cat_state(),
+                            self.global_cats.clone(),
+                        )
+                        .alias(OBJECT_COL_NAME),
+                    ]);
+                    if object_type.is_lang_string() {
+                        lf = lf
+                            .unnest(by_name([OBJECT_COL_NAME], true, false), None)
+                            .select([
+                                col(SUBJECT_COL_NAME),
+                                col(LANG_STRING_VALUE_FIELD),
+                                col(LANG_STRING_LANG_FIELD),
+                            ]);
+                    } else {
+                        lf = lf.select([col(SUBJECT_COL_NAME), col(OBJECT_COL_NAME)]);
+                    };
+                    let mut df = lf.collect().unwrap();
+                    if !object_type.is_lang_string() {
+                        convert_datelike_to_string(&mut df, OBJECT_COL_NAME);
+                    }
+
+                    fast_ntriples::write_triples_in_df(
+                        buf,
+                        &df,
+                        predicate_bytes,
+                        &types,
+                        CHUNK_SIZE,
+                        n_threads,
+                    )
+                    .unwrap();
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn write_generic_map<W: Write>(
+        &self,
+        writer: &mut oxrdfio::WriterQuadSerializer<W>,
+        map: &PredicateTriplesMap,
+    ) -> Result<(), TriplestoreError> {
+        for (predicate, df_map) in map {
+            for ((subject_type, object_type), tt) in df_map {
+                for (lf, _) in tt.get_lazy_frames(&None, &None)? {
+                    let triples = global_df_as_triples(
+                        lf.collect().unwrap(),
+                        subject_type.clone(),
+                        object_type.clone(),
+                        predicate,
+                        self.global_cats.clone(),
+                    );
+                    for t in &triples {
+                        writer.serialize_triple(t).map_err(|x| {
+                            TriplestoreError::WriteTurtleError(format!(
+                                "Error serializing triple {}: {}",
+                                t, x
+                            ))
+                        })?;
+                    }
+                }
+            }
         }
         Ok(())
     }
