@@ -181,21 +181,68 @@ fn build_test_solution_mappings() -> EagerSolutionMappings {
     EagerSolutionMappings::from_query_solutions(&sols).unwrap()
 }
 
-/// Build the `build_test_solution_mappings()` fixture, collapse its
-/// DataFrame to a Struct-typed Series (`DataFrame::into_struct`), and stream
-/// it out to R through the Arrow C Stream Interface exactly like
-/// `export_test_series` does -- proving the DataFrame case reuses that
-/// mechanism unchanged.
+/// Recursively cast any Categorical/Enum-typed Series to plain String
+/// (recursing into Struct fields too, since a "multi" RDFNodeState column is
+/// itself Struct-typed). Real query results commonly store repeated IRI/
+/// literal values as `BaseCatState::CategoricalNative` (a Rust-side storage
+/// optimization, lib/representation/src/solution_mapping.rs:13-30) -- Arrow's
+/// dictionary encoding for a categorical column round-trips fine at the
+/// top level, but confirmed live that nanoarrow's struct-to-data.frame
+/// conversion does NOT resolve a dictionary-encoded field nested inside a
+/// struct column back to its string values, instead surfacing the raw
+/// integer codes. Decategorizing before the whole-DataFrame struct-collapse
+/// sidesteps that -- the memory-efficiency benefit of categorical encoding
+/// only matters Rust-side anyway, not for the R-bound wire format.
+fn decategorize(s: Series) -> savvy::Result<Series> {
+    match s.dtype() {
+        DataType::Categorical(_, _) | DataType::Enum(_, _) => s
+            .cast(&DataType::String)
+            .map_err(|e| crate::errors::runtime_error(e.to_string())),
+        DataType::Struct(_) => {
+            let name = s.name().clone();
+            let len = s.len();
+            let ca = s
+                .struct_()
+                .map_err(|e| crate::errors::runtime_error(e.to_string()))?;
+            let fields: Vec<Series> = ca
+                .fields_as_series()
+                .into_iter()
+                .map(decategorize)
+                .collect::<savvy::Result<_>>()?;
+            StructChunked::from_series(name, len, fields.iter())
+                .map(|sc| sc.into_series())
+                .map_err(|e| crate::errors::runtime_error(e.to_string()))
+        }
+        _ => Ok(s),
+    }
+}
+
+/// Collapse an `EagerSolutionMappings`' DataFrame to a Struct-typed Series
+/// (`DataFrame::into_struct`) and stream it out to R through the Arrow C
+/// Stream Interface, exactly like `export_test_series` does for a bare
+/// Series -- the mechanism `RModel::query()` uses for a real query result,
+/// proven first here against a hand-built fixture
+/// (`export_test_solution_mappings`).
 ///
 /// @param stream_ptr An external pointer from `nanoarrow::nanoarrow_allocate_array_stream()`.
 /// @returns The `rdf_node_types` side-channel, as a JSON string.
-/// @export
-#[savvy]
-fn export_test_solution_mappings(stream_ptr: Sexp) -> savvy::Result<Sexp> {
+pub(crate) fn export_solution_mappings(
+    sm: EagerSolutionMappings,
+    stream_ptr: Sexp,
+) -> savvy::Result<Sexp> {
     let EagerSolutionMappings {
         mappings,
         rdf_node_types,
-    } = build_test_solution_mappings();
+    } = sm;
+
+    let height = mappings.height();
+    let columns: Vec<Column> = mappings
+        .columns()
+        .iter()
+        .map(|c| decategorize(c.as_materialized_series().clone()).map(Column::from))
+        .collect::<savvy::Result<_>>()?;
+    let mappings = DataFrame::new(height, columns)
+        .map_err(|e| crate::errors::runtime_error(e.to_string()))?;
 
     let struct_series = mappings.into_struct("solution_mappings".into()).into_series();
     let field = struct_series.field().to_arrow(CompatLevel::newest());
@@ -209,6 +256,19 @@ fn export_test_solution_mappings(stream_ptr: Sexp) -> savvy::Result<Sexp> {
     unsafe { std::ptr::replace(stream_ptr, stream) };
 
     rdf_node_types_to_json(&rdf_node_types)?.try_into()
+}
+
+/// Build the `build_test_solution_mappings()` fixture and stream it out via
+/// `export_solution_mappings` -- proving the DataFrame case reuses the
+/// Series-level mechanism unchanged, against a fixture with a genuinely
+/// multi-typed column (see `build_test_solution_mappings`'s doc comment).
+///
+/// @param stream_ptr An external pointer from `nanoarrow::nanoarrow_allocate_array_stream()`.
+/// @returns The `rdf_node_types` side-channel, as a JSON string.
+/// @export
+#[savvy]
+fn export_test_solution_mappings(stream_ptr: Sexp) -> savvy::Result<Sexp> {
+    export_solution_mappings(build_test_solution_mappings(), stream_ptr)
 }
 
 /// Read an Arrow C stream from R back into a Struct-typed Series, unnest it

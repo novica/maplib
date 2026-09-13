@@ -46,11 +46,10 @@ NULL
   invisible(.Call(savvy_export_test_series__impl, `stream_ptr`))
 }
 
-#' Build the `build_test_solution_mappings()` fixture, collapse its
-#' DataFrame to a Struct-typed Series (`DataFrame::into_struct`), and stream
-#' it out to R through the Arrow C Stream Interface exactly like
-#' `export_test_series` does -- proving the DataFrame case reuses that
-#' mechanism unchanged.
+#' Build the `build_test_solution_mappings()` fixture and stream it out via
+#' `export_solution_mappings` -- proving the DataFrame case reuses the
+#' Series-level mechanism unchanged, against a fixture with a genuinely
+#' multi-typed column (see `build_test_solution_mappings`'s doc comment).
 #'
 #' @param stream_ptr An external pointer from `nanoarrow::nanoarrow_allocate_array_stream()`.
 #' @returns The `rdf_node_types` side-channel, as a JSON string.
@@ -286,6 +285,12 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_query` <- function(self) {
+  function(`sparql`, `stream_ptr`, `include_transient`, `graph` = NULL) {
+    .Call(savvy_RModel_query__impl, `self`, `sparql`, `stream_ptr`, `include_transient`, `graph`)
+  }
+}
+
 `RModel_reads` <- function(self) {
   function(`s`, `format`, `graph` = NULL) {
     invisible(.Call(savvy_RModel_reads__impl, `self`, `s`, `format`, `graph`))
@@ -325,6 +330,7 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   e$`create_index` <- `RModel_create_index`(ptr)
   e$`detach_graph` <- `RModel_detach_graph`(ptr)
   e$`infer_rdfs` <- `RModel_infer_rdfs`(ptr)
+  e$`query` <- `RModel_query`(ptr)
   e$`reads` <- `RModel_reads`(ptr)
   e$`serialize` <- `RModel_serialize`(ptr)
   e$`size` <- `RModel_size`(ptr)

@@ -159,6 +159,11 @@ SEXP savvy_RModel_new__impl(void) {
     return handle_result(res);
 }
 
+SEXP savvy_RModel_query__impl(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_query__ffi(self__, c_arg__sparql, c_arg__stream_ptr, c_arg__include_transient, c_arg__graph);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_reads__impl(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph) {
     SEXP res = savvy_RModel_reads__ffi(self__, c_arg__s, c_arg__format, c_arg__graph);
     return handle_result(res);
@@ -235,6 +240,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_detach_graph__impl", (DL_FUNC) &savvy_RModel_detach_graph__impl, 3},
     {"savvy_RModel_infer_rdfs__impl", (DL_FUNC) &savvy_RModel_infer_rdfs__impl, 2},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
+    {"savvy_RModel_query__impl", (DL_FUNC) &savvy_RModel_query__impl, 5},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 1},

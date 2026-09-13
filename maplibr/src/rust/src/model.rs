@@ -2,6 +2,7 @@ use crate::errors::argument_error;
 use crate::errors::maplib_error;
 use oxrdf::NamedNode;
 use oxrdfio::RdfFormat;
+use polars::prelude::IntoLazy;
 use representation::dataset::NamedGraph;
 use savvy::{savvy, ListSexp};
 use std::collections::HashMap;
@@ -33,6 +34,20 @@ fn parse_optional_named_graph(graph: Option<&str>) -> savvy::Result<NamedGraph> 
         .map(|g| NamedNode::new(g).map_err(argument_error))
         .transpose()?;
     Ok(NamedGraph::from_maybe_named_node(nn.as_ref()))
+}
+
+/// Parses `query()`'s `graph` argument. Unlike `reads`/`writes`, where a
+/// missing graph means "the default graph" (`parse_optional_named_graph`),
+/// a missing graph here means "no restriction to one named graph" -- mirrors
+/// py_maplib's own `query`, which passes `graph: Option<&NamedGraph>`
+/// through to `Model::query` unchanged rather than defaulting it (py_model.rs:359-360).
+fn parse_query_graph(graph: Option<&str>) -> savvy::Result<Option<NamedGraph>> {
+    graph
+        .map(|g| {
+            let nn = NamedNode::new(g).map_err(argument_error)?;
+            Ok(NamedGraph::from_maybe_named_node(Some(&nn)))
+        })
+        .transpose()
 }
 
 /// A maplib knowledge graph model.
@@ -91,6 +106,80 @@ impl RModel {
         let inner = self.lock();
         let graph = NamedGraph::from_maybe_named_node(None);
         (inner.graph_size(&graph) as i32).try_into()
+    }
+
+    /// Run a SPARQL SELECT query, streaming the result out through the Arrow
+    /// C Stream Interface (mirrors PyModel::query, py_maplib/src/py_model.rs:
+    /// 344-387 -- but only the SELECT case; CONSTRUCT is not yet supported,
+    /// see maplib-l2j).
+    ///
+    /// @param sparql The SPARQL query string.
+    /// @param stream_ptr An external pointer from `nanoarrow::nanoarrow_allocate_array_stream()`.
+    /// @param include_transient Whether to include transient (e.g. inferred)
+    ///   triples in the query. Defaults to FALSE.
+    /// @param graph Optional named graph IRI to restrict the query to (searches
+    ///   across the whole store if NULL, matching py_maplib's default).
+    /// @returns The `rdf_node_types` side-channel, as a JSON string.
+    /// @export
+    fn query(
+        &self,
+        sparql: &str,
+        stream_ptr: savvy::Sexp,
+        include_transient: bool,
+        graph: Option<&str>,
+    ) -> savvy::Result<savvy::Sexp> {
+        let named_graph = parse_query_graph(graph)?;
+        let mut inner = self.lock();
+        let global_cats = inner.triplestore.global_cats.clone();
+        let result = inner
+            .query(
+                sparql,
+                None,
+                named_graph.as_ref(),
+                false,
+                include_transient,
+                None,
+                false,
+                None,
+            )
+            .map_err(maplib_error)?;
+        match result.kind {
+            representation::result::QueryResultKind::Select(sm) => {
+                // Query results store repeated IRI/literal values as category
+                // codes into a Model-wide dictionary (Triplestore::global_cats,
+                // LockedCats) rather than plain polars Categorical-typed
+                // columns -- format_native_columns (mirrors py_maplib's
+                // native_dataframe=True path, py_model.rs query_to_result via
+                // fix_cats_and_multicolumns) is what actually resolves those
+                // codes back to real values (via maybe_decode_expr) and
+                // collapses "multi" RDF-typed columns into one Struct field
+                // per possible type, matching the shape export_solution_mappings
+                // expects. A plain Series-level Categorical->String cast
+                // (arrow_bridge::decategorize) does NOT do this -- confirmed
+                // live, a query result round-tripped to R without this step
+                // came back as raw integer category codes, not strings.
+                let representation::solution_mapping::EagerSolutionMappings {
+                    mappings,
+                    mut rdf_node_types,
+                } = sm;
+                let lf = representation::formatting::format_native_columns(
+                    mappings.lazy(),
+                    &mut rdf_node_types,
+                    global_cats,
+                );
+                let mappings = lf
+                    .collect()
+                    .map_err(|e| crate::errors::runtime_error(e.to_string()))?;
+                let sm = representation::solution_mapping::EagerSolutionMappings {
+                    mappings,
+                    rdf_node_types,
+                };
+                crate::arrow_bridge::export_solution_mappings(sm, stream_ptr)
+            }
+            representation::result::QueryResultKind::Construct(_) => Err(argument_error(
+                "CONSTRUCT queries are not yet supported by maplibr's query() -- only SELECT",
+            )),
+        }
     }
 
     /// Parse RDF triples from a string into this Model.

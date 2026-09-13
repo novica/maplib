@@ -2,11 +2,10 @@
 % Please edit documentation in R/000-wrappers.R
 \name{export_test_solution_mappings}
 \alias{export_test_solution_mappings}
-\title{Build the \code{build_test_solution_mappings()} fixture, collapse its
-DataFrame to a Struct-typed Series (\code{DataFrame::into_struct}), and stream
-it out to R through the Arrow C Stream Interface exactly like
-\code{export_test_series} does -- proving the DataFrame case reuses that
-mechanism unchanged.}
+\title{Build the \code{build_test_solution_mappings()} fixture and stream it out via
+\code{export_solution_mappings} -- proving the DataFrame case reuses the
+Series-level mechanism unchanged, against a fixture with a genuinely
+multi-typed column (see \code{build_test_solution_mappings}'s doc comment).}
 \usage{
 export_test_solution_mappings(stream_ptr)
 }
@@ -17,9 +16,8 @@ export_test_solution_mappings(stream_ptr)
 The \code{rdf_node_types} side-channel, as a JSON string.
 }
 \description{
-Build the \code{build_test_solution_mappings()} fixture, collapse its
-DataFrame to a Struct-typed Series (\code{DataFrame::into_struct}), and stream
-it out to R through the Arrow C Stream Interface exactly like
-\code{export_test_series} does -- proving the DataFrame case reuses that
-mechanism unchanged.
+Build the \code{build_test_solution_mappings()} fixture and stream it out via
+\code{export_solution_mappings} -- proving the DataFrame case reuses the
+Series-level mechanism unchanged, against a fixture with a genuinely
+multi-typed column (see \code{build_test_solution_mappings}'s doc comment).
 }

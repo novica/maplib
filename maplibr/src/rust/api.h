@@ -30,6 +30,7 @@ SEXP savvy_RModel_deserialize__ffi(SEXP c_arg__path, SEXP c_arg__storage_folder)
 SEXP savvy_RModel_detach_graph__ffi(SEXP self__, SEXP c_arg__preserve_name, SEXP c_arg__graph);
 SEXP savvy_RModel_infer_rdfs__ffi(SEXP self__, SEXP c_arg__graph);
 SEXP savvy_RModel_new__ffi(void);
+SEXP savvy_RModel_query__ffi(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph);
 SEXP savvy_RModel_reads__ffi(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_serialize__ffi(SEXP self__, SEXP c_arg__path);
 SEXP savvy_RModel_size__ffi(SEXP self__);

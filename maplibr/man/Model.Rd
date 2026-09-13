@@ -21,6 +21,7 @@ returns \code{self} invisibly).
     \item \href{#method-Model-add_prefixes}{\code{Model$add_prefixes()}}
     \item \href{#method-Model-add_graph}{\code{Model$add_graph()}}
     \item \href{#method-Model-detach_graph}{\code{Model$detach_graph()}}
+    \item \href{#method-Model-query}{\code{Model$query()}}
     \item \href{#method-Model-infer_rdfs}{\code{Model$infer_rdfs()}}
     \item \href{#method-Model-compact}{\code{Model$compact()}}
     \item \href{#method-Model-serialize}{\code{Model$serialize()}}
@@ -195,6 +196,48 @@ than moving it to the default graph there.}
   }
   \subsection{Returns}{
     A new Model containing only the detached graph.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-query"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-query}{}}}
+\subsection{\code{Model$query()}}{
+  Run a SPARQL SELECT query and return the result as a data.frame.
+Mirrors py_maplib's Model.query() (py_maplib/src/py_model.rs:344-387),
+but only the SELECT case -- CONSTRUCT queries are not yet supported
+(raises a maplibr_argument_error), see maplib-l2j.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$query(sparql, graph = NULL, include_transient = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{sparql}}{The SPARQL query string.}
+      \item{\code{graph}}{Optional named graph IRI to restrict the query to (searches
+across the whole store if NULL).}
+      \item{\code{include_transient}}{Whether to include transient (e.g. inferred)
+triples in the query.}
+    }
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Returns}{
+    A data.frame. A column whose values are always the same RDF
+node type (the common case) comes back as a plain vector of that
+type's underlying value (an IRI/blank node id/literal value as a
+plain string, exactly as py_maplib returns by default). A column
+whose RDF node type can vary by row instead comes back from Arrow as
+one sub-column per possible type (only one of which is non-NA on any
+given row) -- collapsed here into a single vector by taking
+whichever sub-column is non-NA per row. The precise per-column RDF
+node type information (which py_maplib exposes via
+SolutionMappings.rdf_types) is attached as the data.frame's
+\code{"rdf_node_types"} attribute instead of a richer typed object, parsed
+from the underlying JSON side-channel (maplibr/src/rust/src/
+arrow_bridge.rs) -- a full RDFType-based port of that accessor is
+left for later.
   }
 }
 
