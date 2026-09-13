@@ -46,6 +46,19 @@ NULL
   invisible(.Call(savvy_export_test_series__impl, `stream_ptr`))
 }
 
+#' Build the `build_test_solution_mappings()` fixture, collapse its
+#' DataFrame to a Struct-typed Series (`DataFrame::into_struct`), and stream
+#' it out to R through the Arrow C Stream Interface exactly like
+#' `export_test_series` does -- proving the DataFrame case reuses that
+#' mechanism unchanged.
+#'
+#' @param stream_ptr An external pointer from `nanoarrow::nanoarrow_allocate_array_stream()`.
+#' @returns The `rdf_node_types` side-channel, as a JSON string.
+#' @export
+`export_test_solution_mappings` <- function(`stream_ptr`) {
+  .Call(savvy_export_test_solution_mappings__impl, `stream_ptr`)
+}
+
 #' Read an Arrow C stream from R back into a Rust Series, then hand back
 #' its length and first value as a sanity check (i32 only, for this prototype).
 #'
@@ -54,6 +67,22 @@ NULL
 #' @export
 `import_test_series` <- function(`stream_ptr`) {
   .Call(savvy_import_test_series__impl, `stream_ptr`)
+}
+
+#' Read an Arrow C stream from R back into a Struct-typed Series, unnest it
+#' back into a DataFrame (`StructChunked::unnest`, the reverse of
+#' `into_struct`), and return a small human-readable summary combining the
+#' recovered DataFrame's shape with the `rdf_node_types` JSON side-channel
+#' handed back in -- a sanity check that both halves survive the round trip
+#' together, matching `import_test_series`'s role for the Series-only case.
+#'
+#' @param stream_ptr An external pointer holding a filled ArrowArrayStream.
+#' @param rdf_node_types_json The JSON string returned by
+#'   `export_test_solution_mappings`.
+#' @returns A character vector: one line per column, `"<name>: <dtype> [<rdf types>]"`.
+#' @export
+`import_test_solution_mappings` <- function(`stream_ptr`, `rdf_node_types_json`) {
+  .Call(savvy_import_test_solution_mappings__impl, `stream_ptr`, `rdf_node_types_json`)
 }
 
 ### wrapper functions for RModel

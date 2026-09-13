@@ -1,5 +1,7 @@
 SEXP savvy_export_test_series__ffi(SEXP c_arg__stream_ptr);
+SEXP savvy_export_test_solution_mappings__ffi(SEXP c_arg__stream_ptr);
 SEXP savvy_import_test_series__ffi(SEXP c_arg__stream_ptr);
+SEXP savvy_import_test_solution_mappings__ffi(SEXP c_arg__stream_ptr, SEXP c_arg__rdf_node_types_json);
 
 // methods and associated functions for RModel
 SEXP savvy_RModel_add_graph__ffi(SEXP self__, SEXP c_arg__other, SEXP c_arg__source_graph, SEXP c_arg__target_graph);

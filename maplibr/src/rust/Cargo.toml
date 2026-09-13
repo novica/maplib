@@ -12,10 +12,13 @@ representation = { path = "../../../lib/representation" }
 triplestore = { path = "../../../lib/triplestore" }
 oxrdf = { workspace = true }
 oxrdfio = { workspace = true }
+sparesults = { workspace = true }
 pyo3 = { workspace = true }
 polars = { version = "0.54.4", default-features = false }
 polars-arrow = "0.54.4"
 savvy = "0.8"
+serde = { workspace = true }
+serde_json = { workspace = true }
 
 [profile.release]
 # By default, on release build, savvy terminates the R session when a panic

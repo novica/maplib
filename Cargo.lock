@@ -2325,6 +2325,9 @@ dependencies = [
  "pyo3",
  "representation",
  "savvy",
+ "serde",
+ "serde_json",
+ "sparesults",
  "triplestore",
 ]
 

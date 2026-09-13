@@ -44,8 +44,18 @@ SEXP savvy_export_test_series__impl(SEXP c_arg__stream_ptr) {
     return handle_result(res);
 }
 
+SEXP savvy_export_test_solution_mappings__impl(SEXP c_arg__stream_ptr) {
+    SEXP res = savvy_export_test_solution_mappings__ffi(c_arg__stream_ptr);
+    return handle_result(res);
+}
+
 SEXP savvy_import_test_series__impl(SEXP c_arg__stream_ptr) {
     SEXP res = savvy_import_test_series__ffi(c_arg__stream_ptr);
+    return handle_result(res);
+}
+
+SEXP savvy_import_test_solution_mappings__impl(SEXP c_arg__stream_ptr, SEXP c_arg__rdf_node_types_json) {
+    SEXP res = savvy_import_test_solution_mappings__ffi(c_arg__stream_ptr, c_arg__rdf_node_types_json);
     return handle_result(res);
 }
 
@@ -117,7 +127,9 @@ SEXP savvy_RModel_writes__impl(SEXP self__, SEXP c_arg__format, SEXP c_arg__grap
 
 static const R_CallMethodDef CallEntries[] = {
     {"savvy_export_test_series__impl", (DL_FUNC) &savvy_export_test_series__impl, 1},
+    {"savvy_export_test_solution_mappings__impl", (DL_FUNC) &savvy_export_test_solution_mappings__impl, 1},
     {"savvy_import_test_series__impl", (DL_FUNC) &savvy_import_test_series__impl, 1},
+    {"savvy_import_test_solution_mappings__impl", (DL_FUNC) &savvy_import_test_solution_mappings__impl, 2},
     {"savvy_RModel_add_graph__impl", (DL_FUNC) &savvy_RModel_add_graph__impl, 4},
     {"savvy_RModel_add_prefixes__impl", (DL_FUNC) &savvy_RModel_add_prefixes__impl, 2},
     {"savvy_RModel_compact__impl", (DL_FUNC) &savvy_RModel_compact__impl, 1},
