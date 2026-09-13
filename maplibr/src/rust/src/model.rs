@@ -41,6 +41,23 @@ pub struct RModel {
     inner: Mutex<maplib::model::Model>,
 }
 
+impl RModel {
+    /// Lock the inner Model, recovering from poison rather than panicking.
+    ///
+    /// std's Mutex poisons itself if a panic happens while it's held (e.g.
+    /// serialize()/deserialize() hitting the lib/disk stub's unimplemented!())
+    /// -- left as the default `.lock().unwrap()`, every later call on the
+    /// SAME RModel would then panic forever with PoisonError, even for
+    /// operations unrelated to whatever originally panicked. Python's GIL
+    /// mutex has no poisoning concept, so `into_inner()` (ignore the poison,
+    /// keep using the data) is the closest match to py_maplib's behavior --
+    /// the data itself is still perfectly valid, since maplib's own methods
+    /// don't panic mid-mutation in a way that would leave it inconsistent.
+    fn lock(&self) -> std::sync::MutexGuard<'_, maplib::model::Model> {
+        self.inner.lock().unwrap_or_else(|e| e.into_inner())
+    }
+}
+
 #[savvy]
 impl RModel {
     /// Create a new, empty Model.
@@ -69,7 +86,7 @@ impl RModel {
     ///
     /// @export
     fn size(&self) -> savvy::Result<savvy::Sexp> {
-        let inner = self.inner.lock().unwrap();
+        let inner = self.lock();
         let graph = NamedGraph::from_maybe_named_node(None);
         (inner.graph_size(&graph) as i32).try_into()
     }
@@ -83,7 +100,7 @@ impl RModel {
     fn reads(&self, s: &str, format: &str, graph: Option<&str>) -> savvy::Result<()> {
         let format = resolve_format(format)?;
         let named_graph = parse_optional_named_graph(graph)?;
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         inner
             .reads(
                 s,
@@ -111,7 +128,7 @@ impl RModel {
             .transpose()?
             .unwrap_or(RdfFormat::NTriples);
         let named_graph = parse_optional_named_graph(graph)?;
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         let mut out = Vec::new();
         inner
             .write_triples(&mut out, &named_graph, format, None)
@@ -126,7 +143,7 @@ impl RModel {
     ///
     /// @export
     fn create_index(&self) -> savvy::Result<()> {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         inner
             .create_index(IndexingOptions::default())
             .map_err(|e| savvy::Error::new(&e.to_string()))
@@ -140,7 +157,7 @@ impl RModel {
     /// @export
     fn truncate_graph(&self, graph: Option<&str>) -> savvy::Result<()> {
         let named_graph = parse_optional_named_graph(graph)?;
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         inner.triplestore.truncate(&named_graph);
         Ok(())
     }
@@ -159,7 +176,7 @@ impl RModel {
             let nn = NamedNode::new(iri).map_err(|e| savvy::Error::new(&e.to_string()))?;
             parsed.insert(name.to_string(), nn);
         }
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         inner.prefixes.extend(parsed);
         Ok(())
     }
@@ -179,8 +196,8 @@ impl RModel {
     ) -> savvy::Result<()> {
         let source_graph = parse_optional_named_graph(source_graph)?;
         let target_graph = parse_optional_named_graph(target_graph)?;
-        let other_inner = other.inner.lock().unwrap();
-        let mut inner = self.inner.lock().unwrap();
+        let other_inner = other.lock();
+        let mut inner = self.lock();
         inner
             .add_graph(&other_inner.triplestore, source_graph, target_graph)
             .map_err(|e| savvy::Error::new(&e.to_string()))
@@ -196,7 +213,7 @@ impl RModel {
     /// @export
     fn detach_graph(&self, preserve_name: bool, graph: Option<&str>) -> savvy::Result<RModel> {
         let named_graph = parse_optional_named_graph(graph)?;
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         let sprout = inner
             .detach_graph(&named_graph, preserve_name)
             .map_err(|e| savvy::Error::new(&e.to_string()))?;
@@ -213,7 +230,7 @@ impl RModel {
     /// @export
     fn infer_rdfs(&self, graph: Option<&str>) -> savvy::Result<savvy::Sexp> {
         let named_graph = parse_optional_named_graph(graph)?;
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         let n = inner
             .infer_rdfs(&named_graph)
             .map_err(|e| savvy::Error::new(&e.to_string()))?;
@@ -224,7 +241,7 @@ impl RModel {
     ///
     /// @export
     fn compact(&self) -> savvy::Result<()> {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         inner.compact().map_err(|e| savvy::Error::new(&e.to_string()))
     }
 
@@ -235,7 +252,7 @@ impl RModel {
     /// @param path Directory to serialize into.
     /// @export
     fn serialize(&self, path: &str) -> savvy::Result<()> {
-        let mut inner = self.inner.lock().unwrap();
+        let mut inner = self.lock();
         inner
             .serialize_triples(Path::new(path))
             .map_err(|e| savvy::Error::new(&e.to_string()))
