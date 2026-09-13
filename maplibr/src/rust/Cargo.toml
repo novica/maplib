@@ -15,8 +15,13 @@ oxrdf = { workspace = true }
 oxrdfio = { workspace = true }
 sparesults = { workspace = true }
 pyo3 = { workspace = true }
+# Pinned explicitly rather than `workspace = true`: the root workspace's
+# `polars` entry doesn't itself set `default-features`, and Cargo silently
+# ignores a member's `default-features` override in that case (warns
+# "could become a hard error in the future") -- switching this one to
+# workspace = true would silently turn default-features back on here.
 polars = { version = "0.54.4", default-features = false }
-polars-arrow = "0.54.4"
+polars-arrow = { workspace = true }
 savvy = "0.8"
 serde = { workspace = true }
 serde_json = { workspace = true }
