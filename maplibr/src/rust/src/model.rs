@@ -106,6 +106,14 @@ fn construct_result_to_solution_mappings(
         // for CONSTRUCT (only the final combined frame goes to R).
         let subject_state = rdf_node_types.get(SUBJECT_COL_NAME).cloned();
         let object_state = rdf_node_types.get(OBJECT_COL_NAME).cloned();
+        // A variable-bound predicate (the `None` case below) is, in
+        // practice, always singly IRI-typed -- RDF's predicate position is
+        // always an IRI -- but the same variable name could in principle
+        // also appear in a non-predicate position elsewhere in the WHERE
+        // clause (e.g. across a UNION), making its RDFNodeState multi just
+        // like subject/object can be. Flattened the same way, rather than
+        // assumed safe to cast directly.
+        let predicate_state = rdf_node_types.get(PREDICATE_COL_NAME).cloned();
         let mut lf = representation::formatting::format_native_columns(
             mappings.lazy(),
             &mut rdf_node_types,
@@ -122,8 +130,8 @@ fn construct_result_to_solution_mappings(
                 polars::prelude::lit(rdf_named_node_to_polars_literal_value(predicate))
                     .alias(PREDICATE_COL_NAME),
             );
-        } else {
-            lf = lf.with_column(col(PREDICATE_COL_NAME).cast(DataType::String));
+        } else if let Some(state) = predicate_state {
+            lf = lf.with_column(flatten_to_string(PREDICATE_COL_NAME, &state));
         }
         lf = lf.select([
             col(SUBJECT_COL_NAME),

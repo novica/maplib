@@ -119,6 +119,30 @@ test_that("CONSTRUCT with a bound ?p and a row-varying ?o flattens multi-typed v
   expect_setequal(copy_rows$object, c("Alice", "30"))
 })
 
+test_that("CONSTRUCT flattens a multi-typed *predicate* variable too, not just subject/object", {
+  # Regression case (roborev review of the CONSTRUCT-support commit): the
+  # variable-bound-predicate branch of construct_result_to_solution_mappings
+  # used to cast the predicate column directly, on the assumption that a
+  # predicate variable is always singly IRI-typed -- true of RDF's predicate
+  # *position*, but not guaranteed of a *variable*, which can also appear in
+  # a non-predicate role elsewhere in the WHERE clause (here, via UNION),
+  # making its RDFNodeState multi just like subject/object can be.
+  m <- Model$new()
+  m$reads('<http://ex/a> <http://ex/name> "Alice" .', format = "ntriples")
+
+  df <- m$query('
+    CONSTRUCT { ?a ?p ?b }
+    WHERE {
+      { ?a ?p ?b }
+      UNION
+      { BIND("not-an-iri" AS ?p) BIND(<http://ex/x> AS ?a) BIND(<http://ex/y> AS ?b) }
+    }
+  ')
+  expect_equal(nrow(df), 2)
+  expect_false(any(is.na(df$predicate)))
+  expect_setequal(df$predicate, c("http://ex/name", "not-an-iri"))
+})
+
 test_that("CONSTRUCT preserves a language-tagged literal's value (dropping the language tag)", {
   m <- Model$new()
   m$reads('<http://ex/a> <http://ex/label> "hello"@en .', format = "turtle")
