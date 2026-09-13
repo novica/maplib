@@ -1,11 +1,16 @@
 Package: maplibr
-Title: What the Package Does (One Line, Title Case)
+Title: R Interface to the 'maplib' Knowledge Graph Engine
 Version: 0.0.0.9000
-Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+Authors@R: c(
+    person("Novica", "Nakov", , "nnovica@gmail.com", role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0009-0005-7773-7718")))
+Description: Build, query, and reason over RDF knowledge graphs backed by the
+    'maplib' Rust engine. Graphs are constructed from tabular data using OTTR
+    mapping templates, queried with SPARQL, and returned as ordinary R
+    data frames via the Arrow C Stream Interface. Also supports RDFS
+    inference and reading/writing common RDF serializations (Turtle,
+    N-Triples, RDF/XML).
+License: Apache License (>= 2.0)
 Encoding: UTF-8
 Imports:
     R6,
