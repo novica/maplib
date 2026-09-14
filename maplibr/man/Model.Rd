@@ -28,6 +28,12 @@ returns \code{self} invisibly).
     \item \href{#method-Model-insert}{\code{Model$insert()}}
     \item \href{#method-Model-add_template}{\code{Model$add_template()}}
     \item \href{#method-Model-map}{\code{Model$map()}}
+    \item \href{#method-Model-map_json}{\code{Model$map_json()}}
+    \item \href{#method-Model-map_json_string}{\code{Model$map_json_string()}}
+    \item \href{#method-Model-map_xml}{\code{Model$map_xml()}}
+    \item \href{#method-Model-map_xml_string}{\code{Model$map_xml_string()}}
+    \item \href{#method-Model-map_df}{\code{Model$map_df()}}
+    \item \href{#method-Model-map_triples}{\code{Model$map_triples()}}
     \item \href{#method-Model-infer_rdfs}{\code{Model$infer_rdfs()}}
     \item \href{#method-Model-compact}{\code{Model$compact()}}
     \item \href{#method-Model-serialize}{\code{Model$serialize()}}
@@ -431,6 +437,179 @@ constant terms.}
 (default graph if NULL).}
       \item{\code{validate_iris}}{Whether to validate that IRI-typed columns contain
 valid IRIs. Defaults to TRUE.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map_json"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map_json}{}}}
+\subsection{\code{Model$map_json()}}{
+  Map a JSON file straight to triples via a fixed
+convention (Facade-X; no template involved).
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map_json(path, graph = NULL, transient = FALSE, uuid_namespace = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{path}}{Path to the JSON file to map.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{transient}}{Whether the resulting triples should be transient
+rather than permanent.}
+      \item{\code{uuid_namespace}}{Optional namespace string for the UUIDv5 blank
+node IRIs minted for JSON objects/arrays. Defaults to the path.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map_json_string"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map_json_string}{}}}
+\subsection{\code{Model$map_json_string()}}{
+  Map a JSON string straight to triples via a fixed
+convention. See \verb{$map_json()} for the file-based equivalent.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map_json_string(
+  json,
+  graph = NULL,
+  transient = FALSE,
+  uuid_namespace = NULL
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{json}}{The JSON document, as a string.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{transient}}{Whether the resulting triples should be transient
+rather than permanent.}
+      \item{\code{uuid_namespace}}{Optional namespace string for the UUIDv5 blank
+node IRIs minted for JSON objects/arrays. Defaults to a random UUID
+if not given.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map_xml"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map_xml}{}}}
+\subsection{\code{Model$map_xml()}}{
+  Map an XML file straight to triples via a fixed
+convention.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map_xml(path, graph = NULL, transient = FALSE, uuid_namespace = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{path}}{Path to the XML file to map.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{transient}}{Whether the resulting triples should be transient
+rather than permanent.}
+      \item{\code{uuid_namespace}}{Optional namespace string for the UUIDv5 blank
+node IRIs minted for XML elements. Defaults to the path.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map_xml_string"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map_xml_string}{}}}
+\subsection{\code{Model$map_xml_string()}}{
+  Map an XML string straight to triples via a fixed
+convention. See \verb{$map_xml()} for the file-based equivalent.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map_xml_string(
+  xml,
+  graph = NULL,
+  transient = FALSE,
+  uuid_namespace = NULL
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{xml}}{The XML document, as a string.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{transient}}{Whether the resulting triples should be transient
+rather than permanent.}
+      \item{\code{uuid_namespace}}{Optional namespace string for the UUIDv5 blank
+node IRIs minted for XML elements. Defaults to a random UUID if not
+given.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map_df"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map_df}{}}}
+\subsection{\code{Model$map_df()}}{
+  Map a data.frame's columns directly to
+subject/predicate/object triples -- one column per predicate, a fresh
+IRI subject per row, no OTTR template involved.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map_df(data, graph = NULL, uuid_namespace = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{A data.frame, one row per subject; every column becomes a
+predicate (named by the column name) with that row's value as the
+object. A zero-row data.frame is a silent no-op.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{uuid_namespace}}{Optional namespace string for the UUIDv5 subject
+IRIs minted per row. Defaults to a random UUID if not given.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-map_triples"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-map_triples}{}}}
+\subsection{\code{Model$map_triples()}}{
+  Map a data.frame's columns directly to
+subject/predicate/object triples using the built-in \code{ottr:Triple}
+template, optionally fixing every row's predicate to a single
+constant IRI instead of reading it from a \code{predicate} column.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$map_triples(data, predicate = NULL, graph = NULL, validate_iris = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{data}}{A data.frame with subject/predicate/object columns (or
+just subject/object if \code{predicate} is given). A zero-row data.frame
+is a silent no-op.}
+      \item{\code{predicate}}{Optional constant predicate IRI to use for every
+row, instead of a \code{predicate} column in \code{data}.}
+      \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
+(default graph if NULL).}
+      \item{\code{validate_iris}}{Whether to validate that IRI-typed columns
+contain valid IRIs. Defaults to TRUE.}
     }
     \if{html}{\out{</div>}}
   }

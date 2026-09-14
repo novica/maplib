@@ -184,8 +184,38 @@ SEXP savvy_RModel_map__impl(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__s
     return handle_result(res);
 }
 
+SEXP savvy_RModel_map_df__impl(SEXP self__, SEXP c_arg__stream_ptr, SEXP c_arg__graph, SEXP c_arg__uuid_namespace) {
+    SEXP res = savvy_RModel_map_df__ffi(self__, c_arg__stream_ptr, c_arg__graph, c_arg__uuid_namespace);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_map_json__impl(SEXP self__, SEXP c_arg__path, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace) {
+    SEXP res = savvy_RModel_map_json__ffi(self__, c_arg__path, c_arg__transient, c_arg__graph, c_arg__uuid_namespace);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_map_json_string__impl(SEXP self__, SEXP c_arg__json, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace) {
+    SEXP res = savvy_RModel_map_json_string__ffi(self__, c_arg__json, c_arg__transient, c_arg__graph, c_arg__uuid_namespace);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_map_no_data__impl(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__graph, SEXP c_arg__validate_iris) {
     SEXP res = savvy_RModel_map_no_data__ffi(self__, c_arg__template_iri, c_arg__graph, c_arg__validate_iris);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_map_triples__impl(SEXP self__, SEXP c_arg__stream_ptr, SEXP c_arg__predicate, SEXP c_arg__graph, SEXP c_arg__validate_iris) {
+    SEXP res = savvy_RModel_map_triples__ffi(self__, c_arg__stream_ptr, c_arg__predicate, c_arg__graph, c_arg__validate_iris);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_map_xml__impl(SEXP self__, SEXP c_arg__path, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace) {
+    SEXP res = savvy_RModel_map_xml__ffi(self__, c_arg__path, c_arg__transient, c_arg__graph, c_arg__uuid_namespace);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_map_xml_string__impl(SEXP self__, SEXP c_arg__xml, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace) {
+    SEXP res = savvy_RModel_map_xml_string__ffi(self__, c_arg__xml, c_arg__transient, c_arg__graph, c_arg__uuid_namespace);
     return handle_result(res);
 }
 
@@ -295,7 +325,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_infer_rdfs__impl", (DL_FUNC) &savvy_RModel_infer_rdfs__impl, 2},
     {"savvy_RModel_insert__impl", (DL_FUNC) &savvy_RModel_insert__impl, 6},
     {"savvy_RModel_map__impl", (DL_FUNC) &savvy_RModel_map__impl, 5},
+    {"savvy_RModel_map_df__impl", (DL_FUNC) &savvy_RModel_map_df__impl, 4},
+    {"savvy_RModel_map_json__impl", (DL_FUNC) &savvy_RModel_map_json__impl, 5},
+    {"savvy_RModel_map_json_string__impl", (DL_FUNC) &savvy_RModel_map_json_string__impl, 5},
     {"savvy_RModel_map_no_data__impl", (DL_FUNC) &savvy_RModel_map_no_data__impl, 4},
+    {"savvy_RModel_map_triples__impl", (DL_FUNC) &savvy_RModel_map_triples__impl, 5},
+    {"savvy_RModel_map_xml__impl", (DL_FUNC) &savvy_RModel_map_xml__impl, 5},
+    {"savvy_RModel_map_xml_string__impl", (DL_FUNC) &savvy_RModel_map_xml_string__impl, 5},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
     {"savvy_RModel_query__impl", (DL_FUNC) &savvy_RModel_query__impl, 6},
     {"savvy_RModel_read__impl", (DL_FUNC) &savvy_RModel_read__impl, 4},

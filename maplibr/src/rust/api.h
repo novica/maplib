@@ -37,7 +37,13 @@ SEXP savvy_RModel_detach_graph__ffi(SEXP self__, SEXP c_arg__preserve_name, SEXP
 SEXP savvy_RModel_infer_rdfs__ffi(SEXP self__, SEXP c_arg__graph);
 SEXP savvy_RModel_insert__ffi(SEXP self__, SEXP c_arg__query, SEXP c_arg__include_transient, SEXP c_arg__transient, SEXP c_arg__source_graph, SEXP c_arg__target_graph);
 SEXP savvy_RModel_map__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__stream_ptr, SEXP c_arg__graph, SEXP c_arg__validate_iris);
+SEXP savvy_RModel_map_df__ffi(SEXP self__, SEXP c_arg__stream_ptr, SEXP c_arg__graph, SEXP c_arg__uuid_namespace);
+SEXP savvy_RModel_map_json__ffi(SEXP self__, SEXP c_arg__path, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace);
+SEXP savvy_RModel_map_json_string__ffi(SEXP self__, SEXP c_arg__json, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace);
 SEXP savvy_RModel_map_no_data__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__graph, SEXP c_arg__validate_iris);
+SEXP savvy_RModel_map_triples__ffi(SEXP self__, SEXP c_arg__stream_ptr, SEXP c_arg__predicate, SEXP c_arg__graph, SEXP c_arg__validate_iris);
+SEXP savvy_RModel_map_xml__ffi(SEXP self__, SEXP c_arg__path, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace);
+SEXP savvy_RModel_map_xml_string__ffi(SEXP self__, SEXP c_arg__xml, SEXP c_arg__transient, SEXP c_arg__graph, SEXP c_arg__uuid_namespace);
 SEXP savvy_RModel_new__ffi(void);
 SEXP savvy_RModel_query__ffi(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph, SEXP c_arg__bindings);
 SEXP savvy_RModel_read__ffi(SEXP self__, SEXP c_arg__path, SEXP c_arg__format, SEXP c_arg__graph);

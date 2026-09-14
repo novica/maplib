@@ -266,6 +266,99 @@ Model <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Map a JSON file straight to triples via a fixed
+    #' convention (Facade-X; no template involved).
+    #' @param path Path to the JSON file to map.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param transient Whether the resulting triples should be transient
+    #'   rather than permanent.
+    #' @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    #'   node IRIs minted for JSON objects/arrays. Defaults to the path.
+    map_json = function(path, graph = NULL, transient = FALSE, uuid_namespace = NULL) {
+      .rethrow(private$rmodel$map_json(path, transient, graph, uuid_namespace))
+      invisible(self)
+    },
+
+    #' @description Map a JSON string straight to triples via a fixed
+    #' convention. See `$map_json()` for the file-based equivalent.
+    #' @param json The JSON document, as a string.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param transient Whether the resulting triples should be transient
+    #'   rather than permanent.
+    #' @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    #'   node IRIs minted for JSON objects/arrays. Defaults to a random UUID
+    #'   if not given.
+    map_json_string = function(json, graph = NULL, transient = FALSE, uuid_namespace = NULL) {
+      .rethrow(private$rmodel$map_json_string(json, transient, graph, uuid_namespace))
+      invisible(self)
+    },
+
+    #' @description Map an XML file straight to triples via a fixed
+    #' convention.
+    #' @param path Path to the XML file to map.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param transient Whether the resulting triples should be transient
+    #'   rather than permanent.
+    #' @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    #'   node IRIs minted for XML elements. Defaults to the path.
+    map_xml = function(path, graph = NULL, transient = FALSE, uuid_namespace = NULL) {
+      .rethrow(private$rmodel$map_xml(path, transient, graph, uuid_namespace))
+      invisible(self)
+    },
+
+    #' @description Map an XML string straight to triples via a fixed
+    #' convention. See `$map_xml()` for the file-based equivalent.
+    #' @param xml The XML document, as a string.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param transient Whether the resulting triples should be transient
+    #'   rather than permanent.
+    #' @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    #'   node IRIs minted for XML elements. Defaults to a random UUID if not
+    #'   given.
+    map_xml_string = function(xml, graph = NULL, transient = FALSE, uuid_namespace = NULL) {
+      .rethrow(private$rmodel$map_xml_string(xml, transient, graph, uuid_namespace))
+      invisible(self)
+    },
+
+    #' @description Map a data.frame's columns directly to
+    #' subject/predicate/object triples -- one column per predicate, a fresh
+    #' IRI subject per row, no OTTR template involved.
+    #' @param data A data.frame, one row per subject; every column becomes a
+    #'   predicate (named by the column name) with that row's value as the
+    #'   object. A zero-row data.frame is a silent no-op.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param uuid_namespace Optional namespace string for the UUIDv5 subject
+    #'   IRIs minted per row. Defaults to a random UUID if not given.
+    map_df = function(data, graph = NULL, uuid_namespace = NULL) {
+      stream <- nanoarrow::as_nanoarrow_array_stream(data)
+      .rethrow(private$rmodel$map_df(stream, graph, uuid_namespace))
+      invisible(self)
+    },
+
+    #' @description Map a data.frame's columns directly to
+    #' subject/predicate/object triples using the built-in `ottr:Triple`
+    #' template, optionally fixing every row's predicate to a single
+    #' constant IRI instead of reading it from a `predicate` column.
+    #' @param data A data.frame with subject/predicate/object columns (or
+    #'   just subject/object if `predicate` is given). A zero-row data.frame
+    #'   is a silent no-op.
+    #' @param predicate Optional constant predicate IRI to use for every
+    #'   row, instead of a `predicate` column in `data`.
+    #' @param graph Optional named graph IRI to add the resulting triples to
+    #'   (default graph if NULL).
+    #' @param validate_iris Whether to validate that IRI-typed columns
+    #'   contain valid IRIs. Defaults to TRUE.
+    map_triples = function(data, predicate = NULL, graph = NULL, validate_iris = NULL) {
+      stream <- nanoarrow::as_nanoarrow_array_stream(data)
+      .rethrow(private$rmodel$map_triples(stream, predicate, graph, validate_iris))
+      invisible(self)
+    },
+
     #' @description Run RDFS inference over a graph in place.
     #' @param graph Optional named graph IRI to infer over (default graph if NULL).
     #' @return The number of new triples inferred (a triple count, not a rule

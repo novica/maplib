@@ -353,9 +353,45 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_map_df` <- function(self) {
+  function(`stream_ptr`, `graph` = NULL, `uuid_namespace` = NULL) {
+    invisible(.Call(savvy_RModel_map_df__impl, `self`, `stream_ptr`, `graph`, `uuid_namespace`))
+  }
+}
+
+`RModel_map_json` <- function(self) {
+  function(`path`, `transient`, `graph` = NULL, `uuid_namespace` = NULL) {
+    invisible(.Call(savvy_RModel_map_json__impl, `self`, `path`, `transient`, `graph`, `uuid_namespace`))
+  }
+}
+
+`RModel_map_json_string` <- function(self) {
+  function(`json`, `transient`, `graph` = NULL, `uuid_namespace` = NULL) {
+    invisible(.Call(savvy_RModel_map_json_string__impl, `self`, `json`, `transient`, `graph`, `uuid_namespace`))
+  }
+}
+
 `RModel_map_no_data` <- function(self) {
   function(`template_iri`, `graph` = NULL, `validate_iris` = NULL) {
     invisible(.Call(savvy_RModel_map_no_data__impl, `self`, `template_iri`, `graph`, `validate_iris`))
+  }
+}
+
+`RModel_map_triples` <- function(self) {
+  function(`stream_ptr`, `predicate` = NULL, `graph` = NULL, `validate_iris` = NULL) {
+    invisible(.Call(savvy_RModel_map_triples__impl, `self`, `stream_ptr`, `predicate`, `graph`, `validate_iris`))
+  }
+}
+
+`RModel_map_xml` <- function(self) {
+  function(`path`, `transient`, `graph` = NULL, `uuid_namespace` = NULL) {
+    invisible(.Call(savvy_RModel_map_xml__impl, `self`, `path`, `transient`, `graph`, `uuid_namespace`))
+  }
+}
+
+`RModel_map_xml_string` <- function(self) {
+  function(`xml`, `transient`, `graph` = NULL, `uuid_namespace` = NULL) {
+    invisible(.Call(savvy_RModel_map_xml_string__impl, `self`, `xml`, `transient`, `graph`, `uuid_namespace`))
   }
 }
 
@@ -426,7 +462,13 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   e$`infer_rdfs` <- `RModel_infer_rdfs`(ptr)
   e$`insert` <- `RModel_insert`(ptr)
   e$`map` <- `RModel_map`(ptr)
+  e$`map_df` <- `RModel_map_df`(ptr)
+  e$`map_json` <- `RModel_map_json`(ptr)
+  e$`map_json_string` <- `RModel_map_json_string`(ptr)
   e$`map_no_data` <- `RModel_map_no_data`(ptr)
+  e$`map_triples` <- `RModel_map_triples`(ptr)
+  e$`map_xml` <- `RModel_map_xml`(ptr)
+  e$`map_xml_string` <- `RModel_map_xml_string`(ptr)
   e$`query` <- `RModel_query`(ptr)
   e$`read` <- `RModel_read`(ptr)
   e$`reads` <- `RModel_reads`(ptr)

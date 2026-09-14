@@ -831,6 +831,209 @@ impl RModel {
             .map_err(maplib_error)
     }
 
+    /// Map a JSON file straight to triples via a fixed convention (Facade-X;
+    /// no template involved), mirroring PyModel::map_json's path branch
+    /// (py_maplib/src/py_model.rs:153-167 / map_json_mutex, py_maplib/src/
+    /// mutexes.rs:181-228 -- split into a path- and a string-taking method
+    /// here rather than one auto-detecting argument, matching this
+    /// package's own read()/reads() split).
+    ///
+    /// @param path Path to the JSON file to map.
+    /// @param transient Whether the resulting triples should be transient
+    ///   rather than permanent. Defaults to FALSE.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    ///   node IRIs minted for JSON objects/arrays. Defaults to the path.
+    /// @export
+    fn map_json(
+        &self,
+        path: &str,
+        transient: bool,
+        graph: Option<&str>,
+        uuid_namespace: Option<&str>,
+    ) -> savvy::Result<()> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .map_json_path(
+                Path::new(path),
+                &named_graph,
+                transient,
+                uuid_namespace.map(String::from),
+            )
+            .map_err(maplib_error)
+    }
+
+    /// Map a JSON string straight to triples via a fixed convention
+    /// (mirrors PyModel::map_json's string branch). See map_json() for the
+    /// file-based equivalent.
+    ///
+    /// @param json The JSON document, as a string.
+    /// @param transient Whether the resulting triples should be transient
+    ///   rather than permanent. Defaults to FALSE.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    ///   node IRIs minted for JSON objects/arrays. Defaults to a random UUID
+    ///   (v4) if not given, matching `Model::map_json_string`.
+    /// @export
+    fn map_json_string(
+        &self,
+        json: &str,
+        transient: bool,
+        graph: Option<&str>,
+        uuid_namespace: Option<&str>,
+    ) -> savvy::Result<()> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .map_json_string(
+                json.to_string(),
+                &named_graph,
+                transient,
+                uuid_namespace.map(String::from),
+            )
+            .map_err(maplib_error)
+    }
+
+    /// Map an XML file straight to triples via a fixed convention (mirrors
+    /// PyModel::map_xml's path branch, py_maplib/src/py_model.rs:169-183 /
+    /// map_xml_mutex, py_maplib/src/mutexes.rs:230-278 -- split into a path-
+    /// and a string-taking method here, same rationale as map_json()).
+    ///
+    /// @param path Path to the XML file to map.
+    /// @param transient Whether the resulting triples should be transient
+    ///   rather than permanent. Defaults to FALSE.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    ///   node IRIs minted for XML elements. Defaults to the path.
+    /// @export
+    fn map_xml(
+        &self,
+        path: &str,
+        transient: bool,
+        graph: Option<&str>,
+        uuid_namespace: Option<&str>,
+    ) -> savvy::Result<()> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .map_xml_path(
+                Path::new(path),
+                &named_graph,
+                transient,
+                uuid_namespace.map(String::from),
+            )
+            .map_err(maplib_error)
+    }
+
+    /// Map an XML string straight to triples via a fixed convention (mirrors
+    /// PyModel::map_xml's string branch). See map_xml() for the file-based
+    /// equivalent.
+    ///
+    /// @param xml The XML document, as a string.
+    /// @param transient Whether the resulting triples should be transient
+    ///   rather than permanent. Defaults to FALSE.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param uuid_namespace Optional namespace string for the UUIDv5 blank
+    ///   node IRIs minted for XML elements. Defaults to a random UUID (v4)
+    ///   if not given, matching `Model::map_xml_string`.
+    /// @export
+    fn map_xml_string(
+        &self,
+        xml: &str,
+        transient: bool,
+        graph: Option<&str>,
+        uuid_namespace: Option<&str>,
+    ) -> savvy::Result<()> {
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .map_xml_string(
+                xml.to_string(),
+                &named_graph,
+                transient,
+                uuid_namespace.map(String::from),
+            )
+            .map_err(maplib_error)
+    }
+
+    /// Map a data.frame's columns directly to subject/predicate/object
+    /// triples -- one column per predicate, a fresh IRI subject per row, no
+    /// OTTR template involved (mirrors PyModel::map_df, py_maplib/src/
+    /// py_model.rs:216-243 / map_df_mutex, py_maplib/src/mutexes.rs:324-355).
+    /// A zero-row data.frame is a no-op, same as map()'s convention.
+    ///
+    /// @param stream_ptr A *filled* Arrow C Stream Interface pointer (e.g.
+    ///   from `nanoarrow::as_nanoarrow_array_stream(df)`).
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param uuid_namespace Optional namespace string for the UUIDv5
+    ///   subject IRIs minted per row. Defaults to a random UUID (v4) if not
+    ///   given, matching `Triplestore::map_df`.
+    /// @export
+    fn map_df(
+        &self,
+        stream_ptr: Sexp,
+        graph: Option<&str>,
+        uuid_namespace: Option<&str>,
+    ) -> savvy::Result<()> {
+        let df = crate::arrow_bridge::import_dataframe(stream_ptr)?;
+        if df.height() == 0 {
+            return Ok(());
+        }
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .map_df(&df, &named_graph, uuid_namespace.map(String::from))
+            .map_err(maplib_error)
+    }
+
+    /// Map a data.frame's columns directly to subject/predicate/object
+    /// triples using the built-in `ottr:Triple` template, optionally fixing
+    /// every row's predicate to a single constant IRI instead of reading it
+    /// from a `predicate` column (mirrors PyModel::map_triples, py_maplib/src/
+    /// py_model.rs:184-214 / map_triples_mutex, py_maplib/src/mutexes.rs:
+    /// 280-301 -- both call `Model::expand_triples`, which is really an
+    /// `expand()` against the built-in triple template rather than a
+    /// separate `Triplestore` method).
+    ///
+    /// @param stream_ptr A *filled* Arrow C Stream Interface pointer, with
+    ///   subject/predicate/object columns (or just subject/object if
+    ///   `predicate` is given).
+    /// @param predicate Optional constant predicate IRI to use for every
+    ///   row, instead of a `predicate` column in the data.
+    /// @param graph Optional named graph IRI to add the resulting triples to
+    ///   (default graph if NULL).
+    /// @param validate_iris Whether to validate that IRI-typed columns
+    ///   contain valid IRIs. Defaults to TRUE.
+    /// @export
+    fn map_triples(
+        &self,
+        stream_ptr: Sexp,
+        predicate: Option<&str>,
+        graph: Option<&str>,
+        validate_iris: Option<bool>,
+    ) -> savvy::Result<()> {
+        let df = crate::arrow_bridge::import_dataframe(stream_ptr)?;
+        if df.height() == 0 {
+            return Ok(());
+        }
+        let predicate = predicate
+            .map(NamedNode::new)
+            .transpose()
+            .map_err(argument_error)?;
+        let named_graph = parse_optional_named_graph(graph)?;
+        let options = MapOptions::from_args(named_graph, validate_iris);
+        let mut inner = self.lock();
+        inner
+            .expand_triples(df, None, predicate, options)
+            .map_err(maplib_error)
+    }
+
     /// Load a Model previously written by serialize() (mirrors
     /// PyModel::deserialize, py_maplib/src/py_model.rs:936-954). This is an
     /// associated function, not a method -- call as `RModel$deserialize(path)`.
