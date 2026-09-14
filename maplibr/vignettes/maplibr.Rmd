@@ -105,8 +105,8 @@ m |> model_query(
 
 `model_update()` runs a SPARQL UPDATE (a `DELETE`/`INSERT` ... `WHERE`
 modify statement) against the Model in place. The bare `INSERT DATA { ... }`
-form isn't supported yet by the underlying engine (see the table at the
-end) -- use an empty `WHERE {}` instead:
+form isn't supported yet by the underlying engine -- use an empty `WHERE {}`
+instead:
 
 ```{r update}
 m |> model_update('
@@ -277,17 +277,3 @@ if (requireNamespace("igraph", quietly = TRUE)) {
   )
 }
 ```
-
-## What doesn't work yet, and why
-
-| Method(s) | Status |
-|---|---|
-| `model_writes(include_transient = TRUE)` | Not supported for any format -- the underlying engine's triple-serialization code has no way to include transient/inferred triples, unlike its query path. A core-engine limitation, not specific to this package. |
-| `$validate()` (SHACL) | Not implemented -- also blocked on a licensing question (the root project's README describes SHACL as proprietary, but its source is present and unrestricted in this checkout; not a decision this package can make unilaterally). |
-| `model_serialize()` / `model_deserialize()` | Wired up correctly, but panic at runtime -- the on-disk storage engine they depend on is a closed-source stub in this checkout. |
-| `$add_udf()` | Not implemented -- the underlying engine's UDF callback mechanism is CPython-specific end to end (it calls into Python's own `io`/`polars` modules to invoke the callback), with no way for a non-Python binding to register one instead. A core-engine limitation. |
-| bare `INSERT DATA { ... }` / `DELETE DATA { ... }` (in `model_update()`) | Panics instead of raising a normal error -- unimplemented in the underlying engine's SPARQL UPDATE handling. Use `INSERT { ... } WHERE {}` / `DELETE { ... } WHERE {}` instead, which works correctly. A core-engine limitation. |
-| CIM XML, HDT, JSON-LD | Not ported. |
-
-See the package's development notes for the full, current list of known
-issues and their upstream/local status.
