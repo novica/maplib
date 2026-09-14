@@ -17,6 +17,15 @@ through what's implemented today: building a graph, querying and updating it
 with SPARQL, mapping data into RDF (both with OTTR templates and directly),
 RDFS inference, and managing named graphs.
 
+`Model` is an R6 class, so every method is also available as `m$method(...)`
+-- but this vignette uses the pipe-friendly `model_*()` functions throughout
+instead (`m |> model_query(...)` rather than `m$query(...)`), since both are
+fully equivalent and interchangeable, and the pipe form reads better across
+a multi-step pipeline. `model_*()` uses that prefix rather than bare
+`read()`/`write()`/`map()`/`update()` deliberately: those names would mask
+`base::write`, `purrr::map`, and the `stats::update` S3 generic if this
+package were attached alongside a normal tidyverse session.
+
 ```{r setup}
 library(maplibr)
 ```
@@ -24,58 +33,58 @@ library(maplibr)
 ## Creating a Model and reading triples
 
 `Model` is the main entry point -- an in-memory RDF knowledge graph.
+`model_reads()` mutates it in place and returns it invisibly, so it chains
+straight off `Model$new()`:
 
 ```{r create-and-read}
-m <- Model$new()
+m <- Model$new() |>
+  model_reads('
+    <http://example.org/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
+    <http://example.org/Person> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://example.org/Agent> .
+    <http://example.org/alice> <http://example.org/name> "Alice" .
+  ', format = "ntriples")
 
-m$reads('
-  <http://example.org/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
-  <http://example.org/Person> <http://www.w3.org/2000/01/rdf-schema#subClassOf> <http://example.org/Agent> .
-  <http://example.org/alice> <http://example.org/name> "Alice" .
-', format = "ntriples")
-
-m$size()
+model_size(m)
 ```
 
 ## Serializing back out
 
 ```{r writes}
-cat(m$writes())
+m |> model_writes() |> cat()
 ```
 
 Turtle works too:
 
 ```{r writes-turtle}
-cat(m$writes(format = "turtle"))
+m |> model_writes(format = "turtle") |> cat()
 ```
 
-`$read()`/`$write()` are the file-based counterparts to
-`$reads()`/`$writes()` -- `$read()` guesses the format from the file
-extension (`.ttl`/`.nt`/`.xml`/`.rdf`) when `format` isn't given:
+`model_read()`/`model_write()` are the file-based counterparts to
+`model_reads()`/`model_writes()` -- `model_read()` guesses the format from
+the file extension (`.ttl`/`.nt`/`.xml`/`.rdf`) when `format` isn't given:
 
 ```{r read-write-file}
 path <- tempfile(fileext = ".ttl")
-m$write(path, format = "turtle")
+m |> model_write(path, format = "turtle")
 
-m_from_file <- Model$new()
-m_from_file$read(path)
-m_from_file$size()
+m_from_file <- Model$new() |> model_read(path)
+model_size(m_from_file)
 unlink(path)
 ```
 
 ## Querying with SPARQL
 
-`$query()` runs a SPARQL query and returns the result as a data.frame.
+`model_query()` runs a SPARQL query and returns the result as a data.frame.
 
 ```{r query-select}
-m$query("SELECT ?s ?o WHERE { ?s <http://example.org/name> ?o }")
+m |> model_query("SELECT ?s ?o WHERE { ?s <http://example.org/name> ?o }")
 ```
 
 CONSTRUCT queries are supported too, returned as a combined
 subject/predicate/object data.frame:
 
 ```{r query-construct}
-m$query("
+m |> model_query("
   CONSTRUCT { ?s <http://example.org/hasType> ?type }
   WHERE { ?s a ?type }
 ")
@@ -86,7 +95,7 @@ the query runs -- useful inside a `FILTER`, though not as a `SELECT`-ed
 column itself:
 
 ```{r query-bindings}
-m$query(
+m |> model_query(
   'SELECT * WHERE { VALUES ?name { "Alice" "Bob" } FILTER(?name = ?who) }',
   bindings = list(who = Literal("Bob"))
 )
@@ -94,34 +103,34 @@ m$query(
 
 ## Updating data with SPARQL UPDATE and INSERT
 
-`$update()` runs a SPARQL UPDATE (a `DELETE`/`INSERT` ... `WHERE` modify
-statement) against the Model in place. The bare `INSERT DATA { ... }` form
-isn't supported yet by the underlying engine (see the table at the end) --
-use an empty `WHERE {}` instead:
+`model_update()` runs a SPARQL UPDATE (a `DELETE`/`INSERT` ... `WHERE`
+modify statement) against the Model in place. The bare `INSERT DATA { ... }`
+form isn't supported yet by the underlying engine (see the table at the
+end) -- use an empty `WHERE {}` instead:
 
 ```{r update}
-m$update('
+m |> model_update('
   PREFIX ex: <http://example.org/>
   INSERT { ex:alice ex:greeting "Hello" } WHERE {}
 ')
-m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/greeting> ?o }")
+m |> model_query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/greeting> ?o }")
 ```
 
-`$insert()` runs a SPARQL `CONSTRUCT` query and adds its results as new
+`model_insert()` runs a SPARQL `CONSTRUCT` query and adds its results as new
 triples, optionally into a different graph than it queried:
 
 ```{r insert}
-m$insert(
+m |> model_insert(
   "CONSTRUCT { ?s <http://example.org/hasType> ?type } WHERE { ?s a ?type }",
   target_graph = "urn:graph:types"
 )
-m$size("urn:graph:types")
+model_size(m, "urn:graph:types")
 ```
 
 ## Mapping tabular data into RDF with OTTR templates
 
-`$map()` expands an OTTR template against a data.frame, adding the resulting
-triples to the Model. Templates can be built programmatically...
+`model_map()` expands an OTTR template against a data.frame, adding the
+resulting triples to the Model. Templates can be built programmatically...
 
 ```{r map-programmatic}
 ex <- Prefix("http://example.org/", "ex")
@@ -132,12 +141,15 @@ template <- Template(
   instances = list(Triple(suf(ex, "alice"), suf(ex, "nickname"), my_value))
 )
 
-m$map(template, data.frame(MyValue = c("Ally", "Al")))
-m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/nickname> ?o }")
+m |> model_map(template, data.frame(MyValue = c("Ally", "Al")))
+m |> model_query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/nickname> ?o }")
 ```
 
 ...or from an stOTTR document string, matching `py_maplib`'s own syntax (see
-the root project's README for the OTTR template language itself):
+the root project's README for the OTTR template language itself). Since
+`model_add_template()` returns the registered template's IRI rather than
+`m`, it's not itself chained onward -- pipe into it, but capture its result
+separately from the `m` you keep mutating:
 
 ```{r map-doc-string}
 doc <- '
@@ -146,64 +158,64 @@ ex:HasFriend [?Friend] :: {
   ottr:Triple(ex:alice, ex:knows, ?Friend)
 } .
 '
-m$add_template(doc)
-m$map("http://example.org/HasFriend", data.frame(Friend = "http://example.org/bob"))
-m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/knows> ?o }")
+m |> model_add_template(doc)
+m |> model_map("http://example.org/HasFriend", data.frame(Friend = "http://example.org/bob"))
+m |> model_query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/knows> ?o }")
 ```
 
 ## Mapping data directly to triples, without a template
 
-For data that doesn't need OTTR's templating power, several `$map_*()`
-methods add triples directly instead. `$map_df()` turns a data.frame's
-columns into predicates, one row per subject:
+For data that doesn't need OTTR's templating power, several `model_map_*()`
+functions add triples directly instead. `model_map_df()` turns a
+data.frame's columns into predicates, one row per subject:
 
 ```{r map-df}
 readings <- data.frame(city = c("Oslo", "Bergen"), temp_c = c(14, 16))
-m_direct <- Model$new()
-m_direct$map_df(readings)
-m_direct$query("SELECT ?p ?o WHERE { ?s ?p ?o }")
+m_direct <- Model$new() |> model_map_df(readings)
+m_direct |> model_query("SELECT ?p ?o WHERE { ?s ?p ?o }")
 ```
 
-`$map_triples()` maps subject/predicate/object columns directly (or just
-subject/object, with a constant `predicate`):
+`model_map_triples()` maps subject/predicate/object columns directly (or
+just subject/object, with a constant `predicate`):
 
 ```{r map-triples}
-m_triples <- Model$new()
-m_triples$map_triples(
+m_triples <- Model$new() |> model_map_triples(
   data.frame(subject = "http://example.org/alice", object = "http://example.org/bob"),
   predicate = "http://example.org/knows"
 )
-m_triples$query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
+m_triples |> model_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
 ```
 
-`$map_json_string()`/`$map_xml_string()` (and their file-based
-`$map_json()`/`$map_xml()` counterparts) apply a fixed convention
+`model_map_json_string()`/`model_map_xml_string()` (and their file-based
+`model_map_json()`/`model_map_xml()` counterparts) apply a fixed convention
 (Facade-X) to a whole JSON or XML document instead:
 
 ```{r map-json}
-m_json <- Model$new()
-m_json$map_json_string('{"name": "Alice", "age": 30}')
-m_json$query("SELECT ?p ?o WHERE { ?s ?p ?o }")
+m_json <- Model$new() |> model_map_json_string('{"name": "Alice", "age": 30}')
+m_json |> model_query("SELECT ?p ?o WHERE { ?s ?p ?o }")
 ```
 
 ## RDFS inference
 
 `alice` is a `Person`, and `Person` is a subclass of `Agent` -- RDFS
 inference should let us derive that `alice` is also an `Agent`.
+`model_infer_rdfs()` returns the number of newly-inferred triples, not `m`,
+so this one's called directly rather than piped further:
 
 ```{r infer}
-n <- m$infer_rdfs()
+n <- m |> model_infer_rdfs()
 n
 ```
 
 Inferred triples are *transient* -- kept separately from the main graph, and
-only visible to `$query()` when asked for explicitly (`$writes()` doesn't
-currently support this at all, a core-engine limitation, not an R-wrapper
-one -- see the "Upstream issues" section of the package's development notes):
+only visible to `model_query()` when asked for explicitly (`model_writes()`
+doesn't currently support this at all, a core-engine limitation, not an
+R-wrapper one -- see the "Upstream issues" section of the package's
+development notes):
 
 ```{r infer-transient}
-without <- m$query("SELECT * WHERE { ?s ?p ?o }")
-with_transient <- m$query("SELECT * WHERE { ?s ?p ?o }", include_transient = TRUE)
+without <- m |> model_query("SELECT * WHERE { ?s ?p ?o }")
+with_transient <- m |> model_query("SELECT * WHERE { ?s ?p ?o }", include_transient = TRUE)
 nrow(without)
 nrow(with_transient)
 ```
@@ -214,28 +226,30 @@ Triples can be routed into named graphs, copied between Models, and split
 back out.
 
 ```{r graphs}
-m$reads(
+m |> model_reads(
   '<http://example.org/bob> <http://example.org/name> "Bob" .',
   format = "ntriples",
   graph = "urn:graph:extra"
 )
-m$size("urn:graph:extra")
-m$size() # default graph, unaffected
+model_size(m, "urn:graph:extra")
+model_size(m) # default graph, unaffected
 
-m2 <- Model$new()
-m2$add_graph(m)
-m2$size()
+m2 <- Model$new() |> model_add_graph(m)
+model_size(m2)
 
-sprout <- m$detach_graph(graph = "urn:graph:extra")
-sprout$size()
-m$size("urn:graph:extra") # emptied by the detach
+sprout <- m |> model_detach_graph(graph = "urn:graph:extra")
+model_size(sprout)
+model_size(m, "urn:graph:extra") # emptied by the detach
 ```
 
 ## Prefixes and indexing
 
+Both mutate in place, so a two-step setup pipeline chains naturally:
+
 ```{r prefixes-index}
-m$add_prefixes(list(ex = "http://example.org/"))
-m$create_index()
+m |>
+  model_add_prefixes(list(ex = "http://example.org/")) |>
+  model_create_index()
 ```
 
 ## Visualizing a graph
@@ -245,7 +259,7 @@ is a plain data.frame, so any R graph package works directly on it.
 
 ```{r graph-plot, fig.width=6, fig.height=4.5}
 if (requireNamespace("igraph", quietly = TRUE)) {
-  triples <- m$query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
+  triples <- m |> model_query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
   short_label <- function(iri) sub(".*[/#]", "", iri)
 
   edges <- data.frame(from = short_label(triples$s), to = short_label(triples$o))
@@ -264,43 +278,15 @@ if (requireNamespace("igraph", quietly = TRUE)) {
 }
 ```
 
-## Pipe-friendly usage
-
-Every `Model` method above is also available as a standalone `model_*()`
-function taking the Model as its first argument, so `m |> model_query(...)`
-works as an alternative to `m$query(...)` -- both are equivalent and stay
-available side by side (the same convention `arrow` and `torch` use for
-their own R6-based objects). This rewrites the "Creating a Model" example
-from the top of this vignette as one pipeline:
-
-```{r pipe-example}
-m_piped <- Model$new() |>
-  model_reads('
-    <http://example.org/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
-    <http://example.org/alice> <http://example.org/name> "Alice" .
-  ', format = "ntriples") |>
-  model_update('
-    PREFIX ex: <http://example.org/>
-    INSERT { ex:alice ex:greeting "Hello" } WHERE {}
-  ')
-
-m_piped |> model_query("SELECT ?p ?o WHERE { <http://example.org/alice> ?p ?o }")
-```
-
-The `model_` prefix (rather than bare `read()`/`write()`/`map()`/`update()`)
-is deliberate: those names would mask `base::write`, `purrr::map`, and the
-`stats::update` S3 generic if this package were attached alongside a normal
-tidyverse session.
-
 ## What doesn't work yet, and why
 
 | Method(s) | Status |
 |---|---|
-| `$writes(include_transient = TRUE)` | Not supported for any format -- the underlying engine's triple-serialization code has no way to include transient/inferred triples, unlike its query path. A core-engine limitation, not specific to this package. |
+| `model_writes(include_transient = TRUE)` | Not supported for any format -- the underlying engine's triple-serialization code has no way to include transient/inferred triples, unlike its query path. A core-engine limitation, not specific to this package. |
 | `$validate()` (SHACL) | Not implemented -- also blocked on a licensing question (the root project's README describes SHACL as proprietary, but its source is present and unrestricted in this checkout; not a decision this package can make unilaterally). |
-| `$serialize()` / `$deserialize()` | Wired up correctly, but panic at runtime -- the on-disk storage engine they depend on is a closed-source stub in this checkout. |
+| `model_serialize()` / `model_deserialize()` | Wired up correctly, but panic at runtime -- the on-disk storage engine they depend on is a closed-source stub in this checkout. |
 | `$add_udf()` | Not implemented -- the underlying engine's UDF callback mechanism is CPython-specific end to end (it calls into Python's own `io`/`polars` modules to invoke the callback), with no way for a non-Python binding to register one instead. A core-engine limitation. |
-| bare `INSERT DATA { ... }` / `DELETE DATA { ... }` (in `$update()`) | Panics instead of raising a normal error -- unimplemented in the underlying engine's SPARQL UPDATE handling. Use `INSERT { ... } WHERE {}` / `DELETE { ... } WHERE {}` instead, which works correctly. A core-engine limitation. |
+| bare `INSERT DATA { ... }` / `DELETE DATA { ... }` (in `model_update()`) | Panics instead of raising a normal error -- unimplemented in the underlying engine's SPARQL UPDATE handling. Use `INSERT { ... } WHERE {}` / `DELETE { ... } WHERE {}` instead, which works correctly. A core-engine limitation. |
 | CIM XML, HDT, JSON-LD | Not ported. |
 
 See the package's development notes for the full, current list of known
