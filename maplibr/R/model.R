@@ -53,7 +53,9 @@ Model <- R6::R6Class(
     #' @description Parse RDF triples from a file into this Model.
     #' @param path Path to the RDF file to read.
     #' @param format One of "ntriples", "turtle", "xml" (rdf/xml). Guessed
-    #'   from the file extension if NULL (.ttl/.nt/.xml or .rdf).
+    #'   from the file extension if NULL (.ttl -> turtle, .nt -> ntriples,
+    #'   .xml/.rdf -> xml) -- any other or missing extension raises a normal
+    #'   error, so pass `format` explicitly for those.
     #' @param graph Optional named graph IRI to read into (default graph if NULL).
     read = function(path, format = NULL, graph = NULL) {
       .rethrow(private$rmodel$read(path, format, graph))

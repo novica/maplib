@@ -110,7 +110,9 @@ is for internal use only.
     \describe{
       \item{\code{path}}{Path to the RDF file to read.}
       \item{\code{format}}{One of "ntriples", "turtle", "xml" (rdf/xml). Guessed
-from the file extension if NULL (.ttl/.nt/.xml or .rdf).}
+from the file extension if NULL (.ttl -> turtle, .nt -> ntriples,
+.xml/.rdf -> xml) -- any other or missing extension raises a normal
+error, so pass \code{format} explicitly for those.}
       \item{\code{graph}}{Optional named graph IRI to read into (default graph if NULL).}
     }
     \if{html}{\out{</div>}}

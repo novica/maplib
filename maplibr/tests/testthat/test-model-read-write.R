@@ -59,3 +59,16 @@ test_that("read() raises a catchable error for a nonexistent file", {
     class = "maplibr_maplib_error"
   )
 })
+
+test_that("read() raises a catchable error for an unsupported or missing extension, instead of crashing", {
+  # Regression case: read()'s format-guessing used to pass format = NULL
+  # straight through to the core engine's own extension guesser, whose
+  # unrecognized-extension fallback is a bare todo!() -- a panic, and with
+  # this crate's release profile set to panic = "abort", that would abort
+  # the whole R session rather than raise a catchable error. Guessing the
+  # format in the R wrapper itself (guess_format_from_extension) means an
+  # unrecognized extension is a normal error well before reaching that code.
+  m <- Model$new()
+  expect_error(m$read(tempfile()), class = "maplibr_argument_error")
+  expect_error(m$read(tempfile(fileext = ".csv")), class = "maplibr_argument_error")
+})

@@ -41,6 +41,37 @@ fn resolve_format(format: &str) -> savvy::Result<ExtendedRdfFormat> {
     resolve_normal_format(format).map(ExtendedRdfFormat::Normal)
 }
 
+/// Guesses a file's RDF format from its extension, for `read()`'s
+/// `format = NULL` case -- deliberately its own, narrower copy of
+/// `Triplestore::read_triples_from_path`'s own extension-guessing
+/// (lib/triplestore/src/triples_read.rs:62-82), NOT a passthrough of `None`
+/// into that function. That function's guesser falls into a bare `todo!()`
+/// for any extension it doesn't recognize (also true of JSON-LD/HDT, which
+/// it *does* recognize but this package deliberately doesn't support yet,
+/// see `resolve_format`) -- a `todo!()` panics, and this crate's release
+/// profile sets `panic = "abort"` (src/rust/Cargo.toml), so reaching that
+/// code path with an unsupported or missing extension would abort the whole
+/// R session, not raise a catchable error. Guessing here instead means an
+/// unrecognized extension hits this function's own `Err` arm, which
+/// `read()` turns into a normal `maplibr_argument_error` well before ever
+/// calling into `read_triples`.
+fn guess_format_from_extension(path: &str) -> savvy::Result<ExtendedRdfFormat> {
+    let ext = Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_lowercase());
+    match ext.as_deref() {
+        Some("ttl") => Ok(ExtendedRdfFormat::Normal(RdfFormat::Turtle)),
+        Some("nt") => Ok(ExtendedRdfFormat::Normal(RdfFormat::NTriples)),
+        Some("xml") | Some("rdf") => Ok(ExtendedRdfFormat::Normal(RdfFormat::RdfXml)),
+        _ => Err(argument_error(format!(
+            "Could not guess an RDF format from the extension of '{}' -- pass `format` explicitly \
+             (one of \"ntriples\", \"turtle\", \"xml\")",
+            path
+        ))),
+    }
+}
+
 fn parse_optional_named_graph(graph: Option<&str>) -> savvy::Result<NamedGraph> {
     let nn = graph
         .map(|g| NamedNode::new(g).map_err(argument_error))
@@ -481,22 +512,30 @@ impl RModel {
     /// Parse RDF triples from a file into this Model (mirrors PyModel::read,
     /// py_maplib/src/py_model.rs:616-647 / read_mutex, py_maplib/src/
     /// mutexes.rs:527-563 -- CIM XML and HDT deliberately unsupported here,
-    /// same as reads()/resolve_format).
+    /// same as reads()/resolve_format). Never passes `format = NULL` through
+    /// to the core engine's own extension-guessing (see
+    /// guess_format_from_extension's doc comment for why: its guesser's
+    /// unrecognized-extension fallback is a process-aborting panic, not a
+    /// catchable error).
     ///
     /// @param path Path to the RDF file to read.
     /// @param format One of "ntriples", "turtle", "xml" (rdf/xml). Guessed
-    ///   from the file extension if NULL (.ttl/.nt/.xml or .rdf), matching
-    ///   py_maplib's own default.
+    ///   from the file extension if NULL (.ttl -> turtle, .nt -> ntriples,
+    ///   .xml/.rdf -> xml) -- any other or missing extension is a normal
+    ///   error, pass `format` explicitly instead.
     /// @param graph Optional named graph IRI to read into (default graph if NULL).
     /// @export
     fn read(&self, path: &str, format: Option<&str>, graph: Option<&str>) -> savvy::Result<()> {
-        let format = format.map(resolve_format).transpose()?;
+        let format = match format {
+            Some(f) => resolve_format(f)?,
+            None => guess_format_from_extension(path)?,
+        };
         let named_graph = parse_optional_named_graph(graph)?;
         let mut inner = self.lock();
         inner
             .read_triples(
                 Path::new(path),
-                format,
+                Some(format),
                 None,
                 false,
                 None,
