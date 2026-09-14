@@ -264,6 +264,34 @@ if (requireNamespace("igraph", quietly = TRUE)) {
 }
 ```
 
+## Pipe-friendly usage
+
+Every `Model` method above is also available as a standalone `model_*()`
+function taking the Model as its first argument, so `m |> model_query(...)`
+works as an alternative to `m$query(...)` -- both are equivalent and stay
+available side by side (the same convention `arrow` and `torch` use for
+their own R6-based objects). This rewrites the "Creating a Model" example
+from the top of this vignette as one pipeline:
+
+```{r pipe-example}
+m_piped <- Model$new() |>
+  model_reads('
+    <http://example.org/alice> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <http://example.org/Person> .
+    <http://example.org/alice> <http://example.org/name> "Alice" .
+  ', format = "ntriples") |>
+  model_update('
+    PREFIX ex: <http://example.org/>
+    INSERT { ex:alice ex:greeting "Hello" } WHERE {}
+  ')
+
+m_piped |> model_query("SELECT ?p ?o WHERE { <http://example.org/alice> ?p ?o }")
+```
+
+The `model_` prefix (rather than bare `read()`/`write()`/`map()`/`update()`)
+is deliberate: those names would mask `base::write`, `purrr::map`, and the
+`stats::update` S3 generic if this package were attached alongside a normal
+tidyverse session.
+
 ## What doesn't work yet, and why
 
 | Method(s) | Status |

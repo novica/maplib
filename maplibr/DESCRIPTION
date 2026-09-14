@@ -12,6 +12,8 @@ Description: Build, query, and reason over RDF knowledge graphs backed by the
     N-Triples, RDF/XML).
 License: Apache License (>= 2.0)
 Encoding: UTF-8
+Depends:
+    R (>= 4.1)
 Imports:
     R6,
     S7,
@@ -28,6 +30,7 @@ Collate:
     'rdf_type.R'
     'templates.R'
     'model.R'
+    'model-verbs.R'
     'zzz.R'
 Suggests:
     testthat (>= 3.0.0),
