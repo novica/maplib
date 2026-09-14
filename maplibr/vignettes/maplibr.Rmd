@@ -13,9 +13,9 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 
 `maplibr` is an R interface to `maplib`, a Rust RDF knowledge-graph engine
 (the same engine the Python package `py_maplib` wraps). This vignette walks
-through what's implemented today: building a graph, querying it with SPARQL,
-mapping tabular data into RDF with OTTR templates, RDFS inference, and
-managing named graphs.
+through what's implemented today: building a graph, querying and updating it
+with SPARQL, mapping data into RDF (both with OTTR templates and directly),
+RDFS inference, and managing named graphs.
 
 ```{r setup}
 library(maplibr)
@@ -49,6 +49,20 @@ Turtle works too:
 cat(m$writes(format = "turtle"))
 ```
 
+`$read()`/`$write()` are the file-based counterparts to
+`$reads()`/`$writes()` -- `$read()` guesses the format from the file
+extension (`.ttl`/`.nt`/`.xml`/`.rdf`) when `format` isn't given:
+
+```{r read-write-file}
+path <- tempfile(fileext = ".ttl")
+m$write(path, format = "turtle")
+
+m_from_file <- Model$new()
+m_from_file$read(path)
+m_from_file$size()
+unlink(path)
+```
+
 ## Querying with SPARQL
 
 `$query()` runs a SPARQL query and returns the result as a data.frame.
@@ -65,6 +79,43 @@ m$query("
   CONSTRUCT { ?s <http://example.org/hasType> ?type }
   WHERE { ?s a ?type }
 ")
+```
+
+`bindings` pre-binds SPARQL variables to fixed `IRI`/`Literal` values before
+the query runs -- useful inside a `FILTER`, though not as a `SELECT`-ed
+column itself:
+
+```{r query-bindings}
+m$query(
+  'SELECT * WHERE { VALUES ?name { "Alice" "Bob" } FILTER(?name = ?who) }',
+  bindings = list(who = Literal("Bob"))
+)
+```
+
+## Updating data with SPARQL UPDATE and INSERT
+
+`$update()` runs a SPARQL UPDATE (a `DELETE`/`INSERT` ... `WHERE` modify
+statement) against the Model in place. The bare `INSERT DATA { ... }` form
+isn't supported yet by the underlying engine (see the table at the end) --
+use an empty `WHERE {}` instead:
+
+```{r update}
+m$update('
+  PREFIX ex: <http://example.org/>
+  INSERT { ex:alice ex:greeting "Hello" } WHERE {}
+')
+m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/greeting> ?o }")
+```
+
+`$insert()` runs a SPARQL `CONSTRUCT` query and adds its results as new
+triples, optionally into a different graph than it queried:
+
+```{r insert}
+m$insert(
+  "CONSTRUCT { ?s <http://example.org/hasType> ?type } WHERE { ?s a ?type }",
+  target_graph = "urn:graph:types"
+)
+m$size("urn:graph:types")
 ```
 
 ## Mapping tabular data into RDF with OTTR templates
@@ -98,6 +149,41 @@ ex:HasFriend [?Friend] :: {
 m$add_template(doc)
 m$map("http://example.org/HasFriend", data.frame(Friend = "http://example.org/bob"))
 m$query("SELECT ?o WHERE { <http://example.org/alice> <http://example.org/knows> ?o }")
+```
+
+## Mapping data directly to triples, without a template
+
+For data that doesn't need OTTR's templating power, several `$map_*()`
+methods add triples directly instead. `$map_df()` turns a data.frame's
+columns into predicates, one row per subject:
+
+```{r map-df}
+readings <- data.frame(city = c("Oslo", "Bergen"), temp_c = c(14, 16))
+m_direct <- Model$new()
+m_direct$map_df(readings)
+m_direct$query("SELECT ?p ?o WHERE { ?s ?p ?o }")
+```
+
+`$map_triples()` maps subject/predicate/object columns directly (or just
+subject/object, with a constant `predicate`):
+
+```{r map-triples}
+m_triples <- Model$new()
+m_triples$map_triples(
+  data.frame(subject = "http://example.org/alice", object = "http://example.org/bob"),
+  predicate = "http://example.org/knows"
+)
+m_triples$query("SELECT ?s ?p ?o WHERE { ?s ?p ?o }")
+```
+
+`$map_json_string()`/`$map_xml_string()` (and their file-based
+`$map_json()`/`$map_xml()` counterparts) apply a fixed convention
+(Facade-X) to a whole JSON or XML document instead:
+
+```{r map-json}
+m_json <- Model$new()
+m_json$map_json_string('{"name": "Alice", "age": 30}')
+m_json$query("SELECT ?p ?o WHERE { ?s ?p ?o }")
 ```
 
 ## RDFS inference
@@ -185,7 +271,9 @@ if (requireNamespace("igraph", quietly = TRUE)) {
 | `$writes(include_transient = TRUE)` | Not supported for any format -- the underlying engine's triple-serialization code has no way to include transient/inferred triples, unlike its query path. A core-engine limitation, not specific to this package. |
 | `$validate()` (SHACL) | Not implemented -- also blocked on a licensing question (the root project's README describes SHACL as proprietary, but its source is present and unrestricted in this checkout; not a decision this package can make unilaterally). |
 | `$serialize()` / `$deserialize()` | Wired up correctly, but panic at runtime -- the on-disk storage engine they depend on is a closed-source stub in this checkout. |
-| CIM XML, HDT | Not ported. |
+| `$add_udf()` | Not implemented -- the underlying engine's UDF callback mechanism is CPython-specific end to end (it calls into Python's own `io`/`polars` modules to invoke the callback), with no way for a non-Python binding to register one instead. A core-engine limitation. |
+| bare `INSERT DATA { ... }` / `DELETE DATA { ... }` (in `$update()`) | Panics instead of raising a normal error -- unimplemented in the underlying engine's SPARQL UPDATE handling. Use `INSERT { ... } WHERE {}` / `DELETE { ... } WHERE {}` instead, which works correctly. A core-engine limitation. |
+| CIM XML, HDT, JSON-LD | Not ported. |
 
 See the package's development notes for the full, current list of known
 issues and their upstream/local status.
