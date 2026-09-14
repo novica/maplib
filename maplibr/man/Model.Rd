@@ -274,7 +274,7 @@ different column types, which a single concatenated data.frame can't
 represent without collapsing to a common type regardless.
   \subsection{Usage}{
     \if{html}{\out{<div class="r">}}
-    \preformatted{Model$query(sparql, graph = NULL, include_transient = FALSE)}
+    \preformatted{Model$query(sparql, graph = NULL, include_transient = FALSE, bindings = NULL)}
     \if{html}{\out{</div>}}
   }
   \subsection{Arguments}{
@@ -285,6 +285,13 @@ represent without collapsing to a common type regardless.
 across the whole store if NULL).}
       \item{\code{include_transient}}{Whether to include transient (e.g. inferred)
 triples in the query.}
+      \item{\code{bindings}}{Optional named list of \code{IRI}/\code{Literal} objects
+(see \code{terms.R}) -- pre-binds each named SPARQL variable to a fixed
+value before the query runs, e.g. \code{list(b = IRI("http://ex/a"))}
+binds \code{?b}. A bound variable can only be used inside the query body
+(e.g. a \code{FILTER}), not listed directly in \code{SELECT} -- binding a
+variable that's also a \code{SELECT}-ed output column is a normal error
+(\verb{SELECT *} still works, since it doesn't name variables itself).}
     }
     \if{html}{\out{</div>}}
   }

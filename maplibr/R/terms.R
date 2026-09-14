@@ -215,3 +215,17 @@ S7::method(print, Literal) <- function(x, ...) {
   cat(format(x), "\n", sep = "")
   invisible(x)
 }
+
+# Converts an IRI/Literal into an RGroundTerm (maplibr/src/rust/src/terms.rs)
+# for Model$query()'s bindings= argument. Mirrors templates.R's
+# .as_raw_constant_term() -- no BlankNode/"none" cases here, since a query
+# variable can only ever be bound to an IRI or a literal value.
+.to_ground_term <- function(x) {
+  if (S7::S7_inherits(x, IRI)) {
+    RGroundTerm$iri(x@iri)
+  } else if (S7::S7_inherits(x, Literal)) {
+    RGroundTerm$literal(x@value, x@datatype@iri, x@language)
+  } else {
+    stop("bindings values must be IRI or Literal objects, got: ", class(x)[1], call. = FALSE)
+  }
+}

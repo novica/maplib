@@ -109,6 +109,16 @@ SEXP savvy_RConstantTerm_none__impl(void) {
     return handle_result(res);
 }
 
+SEXP savvy_RGroundTerm_iri__impl(SEXP c_arg__iri) {
+    SEXP res = savvy_RGroundTerm_iri__ffi(c_arg__iri);
+    return handle_result(res);
+}
+
+SEXP savvy_RGroundTerm_literal__impl(SEXP c_arg__value, SEXP c_arg__datatype_iri, SEXP c_arg__language) {
+    SEXP res = savvy_RGroundTerm_literal__ffi(c_arg__value, c_arg__datatype_iri, c_arg__language);
+    return handle_result(res);
+}
+
 SEXP savvy_RInstance_iri__impl(SEXP self__) {
     SEXP res = savvy_RInstance_iri__ffi(self__);
     return handle_result(res);
@@ -184,8 +194,8 @@ SEXP savvy_RModel_new__impl(void) {
     return handle_result(res);
 }
 
-SEXP savvy_RModel_query__impl(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph) {
-    SEXP res = savvy_RModel_query__ffi(self__, c_arg__sparql, c_arg__stream_ptr, c_arg__include_transient, c_arg__graph);
+SEXP savvy_RModel_query__impl(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph, SEXP c_arg__bindings) {
+    SEXP res = savvy_RModel_query__ffi(self__, c_arg__sparql, c_arg__stream_ptr, c_arg__include_transient, c_arg__graph, c_arg__bindings);
     return handle_result(res);
 }
 
@@ -270,6 +280,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RConstantTerm_iri__impl", (DL_FUNC) &savvy_RConstantTerm_iri__impl, 1},
     {"savvy_RConstantTerm_literal__impl", (DL_FUNC) &savvy_RConstantTerm_literal__impl, 3},
     {"savvy_RConstantTerm_none__impl", (DL_FUNC) &savvy_RConstantTerm_none__impl, 0},
+    {"savvy_RGroundTerm_iri__impl", (DL_FUNC) &savvy_RGroundTerm_iri__impl, 1},
+    {"savvy_RGroundTerm_literal__impl", (DL_FUNC) &savvy_RGroundTerm_literal__impl, 3},
     {"savvy_RInstance_iri__impl", (DL_FUNC) &savvy_RInstance_iri__impl, 1},
     {"savvy_RInstance_new__impl", (DL_FUNC) &savvy_RInstance_new__impl, 3},
     {"savvy_RModel_add_graph__impl", (DL_FUNC) &savvy_RModel_add_graph__impl, 4},
@@ -285,7 +297,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_map__impl", (DL_FUNC) &savvy_RModel_map__impl, 5},
     {"savvy_RModel_map_no_data__impl", (DL_FUNC) &savvy_RModel_map_no_data__impl, 4},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
-    {"savvy_RModel_query__impl", (DL_FUNC) &savvy_RModel_query__impl, 5},
+    {"savvy_RModel_query__impl", (DL_FUNC) &savvy_RModel_query__impl, 6},
     {"savvy_RModel_read__impl", (DL_FUNC) &savvy_RModel_read__impl, 4},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},

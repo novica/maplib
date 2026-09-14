@@ -17,6 +17,10 @@ SEXP savvy_RConstantTerm_iri__ffi(SEXP c_arg__iri);
 SEXP savvy_RConstantTerm_literal__ffi(SEXP c_arg__value, SEXP c_arg__datatype_iri, SEXP c_arg__language);
 SEXP savvy_RConstantTerm_none__ffi(void);
 
+// methods and associated functions for RGroundTerm
+SEXP savvy_RGroundTerm_iri__ffi(SEXP c_arg__iri);
+SEXP savvy_RGroundTerm_literal__ffi(SEXP c_arg__value, SEXP c_arg__datatype_iri, SEXP c_arg__language);
+
 // methods and associated functions for RInstance
 SEXP savvy_RInstance_iri__ffi(SEXP self__);
 SEXP savvy_RInstance_new__ffi(SEXP c_arg__template_iri, SEXP c_arg__arguments, SEXP c_arg__list_expander);
@@ -35,7 +39,7 @@ SEXP savvy_RModel_insert__ffi(SEXP self__, SEXP c_arg__query, SEXP c_arg__includ
 SEXP savvy_RModel_map__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__stream_ptr, SEXP c_arg__graph, SEXP c_arg__validate_iris);
 SEXP savvy_RModel_map_no_data__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__graph, SEXP c_arg__validate_iris);
 SEXP savvy_RModel_new__ffi(void);
-SEXP savvy_RModel_query__ffi(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph);
+SEXP savvy_RModel_query__ffi(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph, SEXP c_arg__bindings);
 SEXP savvy_RModel_read__ffi(SEXP self__, SEXP c_arg__path, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_reads__ffi(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_serialize__ffi(SEXP self__, SEXP c_arg__path);

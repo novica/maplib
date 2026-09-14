@@ -9,6 +9,7 @@ crate-type = ["lib", "staticlib"]
 [dependencies]
 maplib = { path = "../../../lib/maplib", features = ["pyo3"] }
 representation = { path = "../../../lib/representation" }
+spargebra = { path = "../../../lib/spargebra" }
 templates = { path = "../../../lib/templates" }
 triplestore = { path = "../../../lib/triplestore" }
 oxrdf = { workspace = true }

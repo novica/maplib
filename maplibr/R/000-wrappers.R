@@ -208,6 +208,49 @@ class(`RConstantTerm`) <- c("maplibr::RConstantTerm__bundle", "savvy_maplibr__se
   cat('maplibr::RConstantTerm\n')
 }
 
+### wrapper functions for RGroundTerm
+
+
+`.savvy_wrap_RGroundTerm` <- function(ptr) {
+  e <- new.env(parent = emptyenv())
+  e$.ptr <- ptr
+
+
+  class(e) <- c("maplibr::RGroundTerm", "RGroundTerm", "savvy_maplibr__sealed")
+  e
+}
+
+
+#' A ground SPARQL binding value: an IRI or a Literal (no blank nodes,
+#' unlike `RConstantTerm` -- blank nodes can't be bound to a query variable,
+#' so there's no variant for one to construct in the first place, unlike
+#' py_maplib's equivalent, which has to reject a blank node at runtime since
+#' it accepts a plain Python value that could be anything, see
+#' `maybe_parse_bindings`, py_maplib/src/lib.rs:479-528). Built from an R
+#' `IRI`/`Literal` (terms.R) by `.to_ground_term()`, and consumed by
+#' `RModel::query`'s `bindings` argument.
+#'
+#' @export
+`RGroundTerm` <- new.env(parent = emptyenv())
+
+### associated functions for RGroundTerm
+
+`RGroundTerm`$`iri` <- function(`iri`) {
+  .savvy_wrap_RGroundTerm(.Call(savvy_RGroundTerm_iri__impl, `iri`))
+}
+
+`RGroundTerm`$`literal` <- function(`value`, `datatype_iri`, `language` = NULL) {
+  .savvy_wrap_RGroundTerm(.Call(savvy_RGroundTerm_literal__impl, `value`, `datatype_iri`, `language`))
+}
+
+
+class(`RGroundTerm`) <- c("maplibr::RGroundTerm__bundle", "savvy_maplibr__sealed")
+
+#' @export
+`print.maplibr::RGroundTerm__bundle` <- function(x, ...) {
+  cat('maplibr::RGroundTerm\n')
+}
+
 ### wrapper functions for RInstance
 
 `RInstance_iri` <- function(self) {
@@ -317,8 +360,8 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
 }
 
 `RModel_query` <- function(self) {
-  function(`sparql`, `stream_ptr`, `include_transient`, `graph` = NULL) {
-    .Call(savvy_RModel_query__impl, `self`, `sparql`, `stream_ptr`, `include_transient`, `graph`)
+  function(`sparql`, `stream_ptr`, `include_transient`, `graph` = NULL, `bindings` = NULL) {
+    .Call(savvy_RModel_query__impl, `self`, `sparql`, `stream_ptr`, `include_transient`, `graph`, `bindings`)
   }
 }
 

@@ -2328,6 +2328,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sparesults",
+ "spargebra",
+ "templates",
  "triplestore",
 ]
 

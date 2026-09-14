@@ -153,6 +153,13 @@ Model <- R6::R6Class(
     #'   across the whole store if NULL).
     #' @param include_transient Whether to include transient (e.g. inferred)
     #'   triples in the query.
+    #' @param bindings Optional named list of `IRI`/`Literal` objects
+    #'   (see `terms.R`) -- pre-binds each named SPARQL variable to a fixed
+    #'   value before the query runs, e.g. `list(b = IRI("http://ex/a"))`
+    #'   binds `?b`. A bound variable can only be used inside the query body
+    #'   (e.g. a `FILTER`), not listed directly in `SELECT` -- binding a
+    #'   variable that's also a `SELECT`-ed output column is a normal error
+    #'   (`SELECT *` still works, since it doesn't name variables itself).
     #' @return A data.frame. A column whose values are always the same RDF
     #'   node type (the common case) comes back as a plain vector of that
     #'   type's underlying value (an IRI/blank node id/literal value as a
@@ -167,9 +174,16 @@ Model <- R6::R6Class(
     #'   from the underlying JSON side-channel (maplibr/src/rust/src/
     #'   arrow_bridge.rs) -- a full RDFType-based port of that accessor is
     #'   left for later.
-    query = function(sparql, graph = NULL, include_transient = FALSE) {
+    query = function(sparql, graph = NULL, include_transient = FALSE, bindings = NULL) {
       stream <- nanoarrow::nanoarrow_allocate_array_stream()
-      rdf_node_types_json <- .rethrow(private$rmodel$query(sparql, stream, include_transient, graph))
+      raw_bindings <- if (!is.null(bindings)) {
+        lapply(bindings, function(x) .savvy_extract_ptr(.to_ground_term(x), "maplibr::RGroundTerm"))
+      } else {
+        NULL
+      }
+      rdf_node_types_json <- .rethrow(
+        private$rmodel$query(sparql, stream, include_transient, graph, raw_bindings)
+      )
       df <- as.data.frame(stream)
       df <- .collapse_multitype_columns(df)
       attr(df, "rdf_node_types") <- jsonlite::fromJSON(rdf_node_types_json, simplifyVector = FALSE)

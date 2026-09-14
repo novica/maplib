@@ -1,6 +1,7 @@
 use crate::errors::argument_error;
 use crate::errors::maplib_error;
 use crate::templates::RTemplate;
+use crate::terms::RGroundTerm;
 use maplib::model::MapOptions;
 use oxrdf::NamedNode;
 use oxrdfio::RdfFormat;
@@ -343,6 +344,13 @@ impl RModel {
     ///   triples in the query. Defaults to FALSE.
     /// @param graph Optional named graph IRI to restrict the query to (searches
     ///   across the whole store if NULL, matching py_maplib's default).
+    /// @param bindings Optional named list of `RGroundTerm` (see terms.R's
+    ///   `.to_ground_term()`) -- pre-binds each named SPARQL variable to a
+    ///   fixed IRI/Literal value before the query runs, mirroring py_maplib's
+    ///   `query(bindings=)`. A bound variable can't also be a `SELECT`-ed
+    ///   output column (`Triplestore::query`'s underlying `maybe_replace_bindings`
+    ///   rejects that combination with a normal error, not a panic --
+    ///   `SELECT *` is fine, since it names no variables itself).
     /// @returns The `rdf_node_types` side-channel, as a JSON string.
     /// @export
     fn query(
@@ -351,8 +359,19 @@ impl RModel {
         stream_ptr: savvy::Sexp,
         include_transient: bool,
         graph: Option<&str>,
+        bindings: Option<ListSexp>,
     ) -> savvy::Result<savvy::Sexp> {
         let named_graph = parse_query_graph(graph)?;
+        let bindings = bindings
+            .map(|b| -> savvy::Result<HashMap<String, spargebra::term::GroundTerm>> {
+                let mut map = HashMap::new();
+                for (name, value) in b.iter() {
+                    let term = <&RGroundTerm>::try_from(value)?;
+                    map.insert(name.to_string(), term.inner.clone());
+                }
+                Ok(map)
+            })
+            .transpose()?;
         let mut inner = self.lock();
         let global_cats = inner.triplestore.global_cats.clone();
         let result = inner
@@ -364,7 +383,7 @@ impl RModel {
                 include_transient,
                 None,
                 false,
-                None,
+                bindings.as_ref(),
             )
             .map_err(maplib_error)?;
         match result.kind {
