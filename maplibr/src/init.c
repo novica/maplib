@@ -189,6 +189,11 @@ SEXP savvy_RModel_query__impl(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__strea
     return handle_result(res);
 }
 
+SEXP savvy_RModel_read__impl(SEXP self__, SEXP c_arg__path, SEXP c_arg__format, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_read__ffi(self__, c_arg__path, c_arg__format, c_arg__graph);
+    return handle_result(res);
+}
+
 SEXP savvy_RModel_reads__impl(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph) {
     SEXP res = savvy_RModel_reads__ffi(self__, c_arg__s, c_arg__format, c_arg__graph);
     return handle_result(res);
@@ -211,6 +216,11 @@ SEXP savvy_RModel_truncate_graph__impl(SEXP self__, SEXP c_arg__graph) {
 
 SEXP savvy_RModel_update__impl(SEXP self__, SEXP c_arg__update, SEXP c_arg__include_transient, SEXP c_arg__graph) {
     SEXP res = savvy_RModel_update__ffi(self__, c_arg__update, c_arg__include_transient, c_arg__graph);
+    return handle_result(res);
+}
+
+SEXP savvy_RModel_write__impl(SEXP self__, SEXP c_arg__path, SEXP c_arg__format, SEXP c_arg__graph) {
+    SEXP res = savvy_RModel_write__ffi(self__, c_arg__path, c_arg__format, c_arg__graph);
     return handle_result(res);
 }
 
@@ -276,11 +286,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"savvy_RModel_map_no_data__impl", (DL_FUNC) &savvy_RModel_map_no_data__impl, 4},
     {"savvy_RModel_new__impl", (DL_FUNC) &savvy_RModel_new__impl, 0},
     {"savvy_RModel_query__impl", (DL_FUNC) &savvy_RModel_query__impl, 5},
+    {"savvy_RModel_read__impl", (DL_FUNC) &savvy_RModel_read__impl, 4},
     {"savvy_RModel_reads__impl", (DL_FUNC) &savvy_RModel_reads__impl, 4},
     {"savvy_RModel_serialize__impl", (DL_FUNC) &savvy_RModel_serialize__impl, 2},
     {"savvy_RModel_size__impl", (DL_FUNC) &savvy_RModel_size__impl, 2},
     {"savvy_RModel_truncate_graph__impl", (DL_FUNC) &savvy_RModel_truncate_graph__impl, 2},
     {"savvy_RModel_update__impl", (DL_FUNC) &savvy_RModel_update__impl, 4},
+    {"savvy_RModel_write__impl", (DL_FUNC) &savvy_RModel_write__impl, 4},
     {"savvy_RModel_writes__impl", (DL_FUNC) &savvy_RModel_writes__impl, 3},
     {"savvy_RParameter_new__impl", (DL_FUNC) &savvy_RParameter_new__impl, 5},
     {"savvy_RTemplate_instance__impl", (DL_FUNC) &savvy_RTemplate_instance__impl, 3},

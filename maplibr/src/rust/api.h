@@ -36,11 +36,13 @@ SEXP savvy_RModel_map__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__st
 SEXP savvy_RModel_map_no_data__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__graph, SEXP c_arg__validate_iris);
 SEXP savvy_RModel_new__ffi(void);
 SEXP savvy_RModel_query__ffi(SEXP self__, SEXP c_arg__sparql, SEXP c_arg__stream_ptr, SEXP c_arg__include_transient, SEXP c_arg__graph);
+SEXP savvy_RModel_read__ffi(SEXP self__, SEXP c_arg__path, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_reads__ffi(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_serialize__ffi(SEXP self__, SEXP c_arg__path);
 SEXP savvy_RModel_size__ffi(SEXP self__, SEXP c_arg__graph);
 SEXP savvy_RModel_truncate_graph__ffi(SEXP self__, SEXP c_arg__graph);
 SEXP savvy_RModel_update__ffi(SEXP self__, SEXP c_arg__update, SEXP c_arg__include_transient, SEXP c_arg__graph);
+SEXP savvy_RModel_write__ffi(SEXP self__, SEXP c_arg__path, SEXP c_arg__format, SEXP c_arg__graph);
 SEXP savvy_RModel_writes__ffi(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph);
 
 // methods and associated functions for RParameter

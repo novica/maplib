@@ -50,11 +50,30 @@ Model <- R6::R6Class(
       invisible(self)
     },
 
+    #' @description Parse RDF triples from a file into this Model.
+    #' @param path Path to the RDF file to read.
+    #' @param format One of "ntriples", "turtle", "xml" (rdf/xml). Guessed
+    #'   from the file extension if NULL (.ttl/.nt/.xml or .rdf).
+    #' @param graph Optional named graph IRI to read into (default graph if NULL).
+    read = function(path, format = NULL, graph = NULL) {
+      .rethrow(private$rmodel$read(path, format, graph))
+      invisible(self)
+    },
+
     #' @description Serialize this Model's triples to a string.
     #' @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
     #' @param graph Optional named graph IRI to write (default graph if NULL).
     writes = function(format = NULL, graph = NULL) {
       .rethrow(private$rmodel$writes(format, graph))
+    },
+
+    #' @description Serialize this Model's triples to a file.
+    #' @param path Path to write the RDF file to (overwritten if it exists).
+    #' @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
+    #' @param graph Optional named graph IRI to write (default graph if NULL).
+    write = function(path, format = NULL, graph = NULL) {
+      .rethrow(private$rmodel$write(path, format, graph))
+      invisible(self)
     },
 
     #' @description Build the default (non-FTS) indexes.

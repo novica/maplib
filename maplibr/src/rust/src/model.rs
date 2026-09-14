@@ -17,6 +17,7 @@ use representation::{
 };
 use savvy::{savvy, ListSexp, Sexp};
 use std::collections::HashMap;
+use std::fs::File;
 use std::path::Path;
 use std::sync::Mutex;
 use triplestore::triples_read::ExtendedRdfFormat;
@@ -477,6 +478,37 @@ impl RModel {
             .map_err(maplib_error)
     }
 
+    /// Parse RDF triples from a file into this Model (mirrors PyModel::read,
+    /// py_maplib/src/py_model.rs:616-647 / read_mutex, py_maplib/src/
+    /// mutexes.rs:527-563 -- CIM XML and HDT deliberately unsupported here,
+    /// same as reads()/resolve_format).
+    ///
+    /// @param path Path to the RDF file to read.
+    /// @param format One of "ntriples", "turtle", "xml" (rdf/xml). Guessed
+    ///   from the file extension if NULL (.ttl/.nt/.xml or .rdf), matching
+    ///   py_maplib's own default.
+    /// @param graph Optional named graph IRI to read into (default graph if NULL).
+    /// @export
+    fn read(&self, path: &str, format: Option<&str>, graph: Option<&str>) -> savvy::Result<()> {
+        let format = format.map(resolve_format).transpose()?;
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .read_triples(
+                Path::new(path),
+                format,
+                None,
+                false,
+                None,
+                true,
+                &named_graph,
+                false,
+                DEFAULT_TRIPLES_BATCH_SIZE,
+                HashMap::new(),
+            )
+            .map_err(maplib_error)
+    }
+
     /// Serialize this Model's triples to a string.
     ///
     /// @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
@@ -496,6 +528,30 @@ impl RModel {
         String::from_utf8(out)
             .map_err(crate::errors::runtime_error)?
             .try_into()
+    }
+
+    /// Serialize this Model's triples to a file (mirrors PyModel::write,
+    /// py_maplib/src/py_model.rs:737-752 / write_triples_mutex, py_maplib/src/
+    /// mutexes.rs:613-650 -- CIM XML and HDT deliberately unsupported here,
+    /// same as writes()/resolve_normal_format; there's no dedicated
+    /// path-taking write method on `Model` itself, py_maplib's own mutex
+    /// opens the `File` at this same layer).
+    ///
+    /// @param path Path to write the RDF file to (overwritten if it exists).
+    /// @param format One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".
+    /// @param graph Optional named graph IRI to write (default graph if NULL).
+    /// @export
+    fn write(&self, path: &str, format: Option<&str>, graph: Option<&str>) -> savvy::Result<()> {
+        let format = format
+            .map(resolve_normal_format)
+            .transpose()?
+            .unwrap_or(RdfFormat::NTriples);
+        let named_graph = parse_optional_named_graph(graph)?;
+        let mut file = File::create(path).map_err(crate::errors::runtime_error)?;
+        let mut inner = self.lock();
+        inner
+            .write_triples(&mut file, &named_graph, format, None)
+            .map_err(maplib_error)
     }
 
     /// Build the default (non-FTS) indexes, matching py_maplib's create_index()

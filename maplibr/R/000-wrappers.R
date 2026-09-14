@@ -322,6 +322,12 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_read` <- function(self) {
+  function(`path`, `format` = NULL, `graph` = NULL) {
+    invisible(.Call(savvy_RModel_read__impl, `self`, `path`, `format`, `graph`))
+  }
+}
+
 `RModel_reads` <- function(self) {
   function(`s`, `format`, `graph` = NULL) {
     invisible(.Call(savvy_RModel_reads__impl, `self`, `s`, `format`, `graph`))
@@ -352,6 +358,12 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_write` <- function(self) {
+  function(`path`, `format` = NULL, `graph` = NULL) {
+    invisible(.Call(savvy_RModel_write__impl, `self`, `path`, `format`, `graph`))
+  }
+}
+
 `RModel_writes` <- function(self) {
   function(`format` = NULL, `graph` = NULL) {
     .Call(savvy_RModel_writes__impl, `self`, `format`, `graph`)
@@ -373,11 +385,13 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   e$`map` <- `RModel_map`(ptr)
   e$`map_no_data` <- `RModel_map_no_data`(ptr)
   e$`query` <- `RModel_query`(ptr)
+  e$`read` <- `RModel_read`(ptr)
   e$`reads` <- `RModel_reads`(ptr)
   e$`serialize` <- `RModel_serialize`(ptr)
   e$`size` <- `RModel_size`(ptr)
   e$`truncate_graph` <- `RModel_truncate_graph`(ptr)
   e$`update` <- `RModel_update`(ptr)
+  e$`write` <- `RModel_write`(ptr)
   e$`writes` <- `RModel_writes`(ptr)
 
   class(e) <- c("maplibr::RModel", "RModel", "savvy_maplibr__sealed")

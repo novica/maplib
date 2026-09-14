@@ -15,7 +15,9 @@ returns \code{self} invisibly).
     \item \href{#method-Model-initialize}{\code{Model$new()}}
     \item \href{#method-Model-size}{\code{Model$size()}}
     \item \href{#method-Model-reads}{\code{Model$reads()}}
+    \item \href{#method-Model-read}{\code{Model$read()}}
     \item \href{#method-Model-writes}{\code{Model$writes()}}
+    \item \href{#method-Model-write}{\code{Model$write()}}
     \item \href{#method-Model-create_index}{\code{Model$create_index()}}
     \item \href{#method-Model-truncate_graph}{\code{Model$truncate_graph()}}
     \item \href{#method-Model-add_prefixes}{\code{Model$add_prefixes()}}
@@ -94,6 +96,28 @@ is for internal use only.
 }
 
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-read"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-read}{}}}
+\subsection{\code{Model$read()}}{
+  Parse RDF triples from a file into this Model.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$read(path, format = NULL, graph = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{path}}{Path to the RDF file to read.}
+      \item{\code{format}}{One of "ntriples", "turtle", "xml" (rdf/xml). Guessed
+from the file extension if NULL (.ttl/.nt/.xml or .rdf).}
+      \item{\code{graph}}{Optional named graph IRI to read into (default graph if NULL).}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Model-writes"></a>}}
 \if{latex}{\out{\hypertarget{method-Model-writes}{}}}
 \subsection{\code{Model$writes()}}{
@@ -106,6 +130,27 @@ is for internal use only.
   \subsection{Arguments}{
     \if{html}{\out{<div class="arguments">}}
     \describe{
+      \item{\code{format}}{One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".}
+      \item{\code{graph}}{Optional named graph IRI to write (default graph if NULL).}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-write"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-write}{}}}
+\subsection{\code{Model$write()}}{
+  Serialize this Model's triples to a file.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$write(path, format = NULL, graph = NULL)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{path}}{Path to write the RDF file to (overwritten if it exists).}
       \item{\code{format}}{One of "ntriples", "turtle", "xml" (rdf/xml). Defaults to "ntriples".}
       \item{\code{graph}}{Optional named graph IRI to write (default graph if NULL).}
     }
