@@ -965,7 +965,11 @@ impl RModel {
     /// triples -- one column per predicate, a fresh IRI subject per row, no
     /// OTTR template involved (mirrors PyModel::map_df, py_maplib/src/
     /// py_model.rs:216-243 / map_df_mutex, py_maplib/src/mutexes.rs:324-355).
-    /// A zero-row data.frame is a no-op, same as map()'s convention.
+    /// Unlike map()'s own zero-row handling, a zero-row data.frame here is
+    /// NOT a no-op: `Triplestore::map_df` (lib/triplestore/src/map_df.rs:
+    /// 115-132) unconditionally adds one `<root> rdf:type fx:root` triple
+    /// regardless of row count, and py_maplib's own map_df has no
+    /// zero-row early return either -- so neither does this one, to match.
     ///
     /// @param stream_ptr A *filled* Arrow C Stream Interface pointer (e.g.
     ///   from `nanoarrow::as_nanoarrow_array_stream(df)`).
@@ -982,9 +986,6 @@ impl RModel {
         uuid_namespace: Option<&str>,
     ) -> savvy::Result<()> {
         let df = crate::arrow_bridge::import_dataframe(stream_ptr)?;
-        if df.height() == 0 {
-            return Ok(());
-        }
         let named_graph = parse_optional_named_graph(graph)?;
         let mut inner = self.lock();
         inner
@@ -999,7 +1000,13 @@ impl RModel {
     /// py_model.rs:184-214 / map_triples_mutex, py_maplib/src/mutexes.rs:
     /// 280-301 -- both call `Model::expand_triples`, which is really an
     /// `expand()` against the built-in triple template rather than a
-    /// separate `Triplestore` method).
+    /// separate `Triplestore` method). Unlike map()'s zero-row handling,
+    /// there is deliberately no zero-row early return here: `expand_triples`
+    /// runs the same subject/predicate/object column-existence validation
+    /// (lib/maplib/src/model/expansion/validation.rs) regardless of row
+    /// count, and py_maplib's own map_triples has no early return either --
+    /// skipping it would let a misnamed/missing column go undetected on an
+    /// (incidentally) zero-row call instead of raising a normal error.
     ///
     /// @param stream_ptr A *filled* Arrow C Stream Interface pointer, with
     ///   subject/predicate/object columns (or just subject/object if
@@ -1019,9 +1026,6 @@ impl RModel {
         validate_iris: Option<bool>,
     ) -> savvy::Result<()> {
         let df = crate::arrow_bridge::import_dataframe(stream_ptr)?;
-        if df.height() == 0 {
-            return Ok(());
-        }
         let predicate = predicate
             .map(NamedNode::new)
             .transpose()

@@ -575,7 +575,9 @@ IRI subject per row, no OTTR template involved.
     \describe{
       \item{\code{data}}{A data.frame, one row per subject; every column becomes a
 predicate (named by the column name) with that row's value as the
-object. A zero-row data.frame is a silent no-op.}
+object. A zero-row data.frame is NOT a no-op here (unlike \verb{$map()}):
+a single root \code{rdf:type} triple is still added, matching the
+underlying engine call.}
       \item{\code{graph}}{Optional named graph IRI to add the resulting triples to
 (default graph if NULL).}
       \item{\code{uuid_namespace}}{Optional namespace string for the UUIDv5 subject
@@ -603,7 +605,8 @@ constant IRI instead of reading it from a \code{predicate} column.
     \describe{
       \item{\code{data}}{A data.frame with subject/predicate/object columns (or
 just subject/object if \code{predicate} is given). A zero-row data.frame
-is a silent no-op.}
+is NOT a no-op: missing/misnamed columns still raise a normal error
+regardless of row count.}
       \item{\code{predicate}}{Optional constant predicate IRI to use for every
 row, instead of a \code{predicate} column in \code{data}.}
       \item{\code{graph}}{Optional named graph IRI to add the resulting triples to

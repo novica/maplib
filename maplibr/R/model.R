@@ -329,7 +329,9 @@ Model <- R6::R6Class(
     #' IRI subject per row, no OTTR template involved.
     #' @param data A data.frame, one row per subject; every column becomes a
     #'   predicate (named by the column name) with that row's value as the
-    #'   object. A zero-row data.frame is a silent no-op.
+    #'   object. A zero-row data.frame is NOT a no-op here (unlike `$map()`):
+    #'   a single root `rdf:type` triple is still added, matching the
+    #'   underlying engine call.
     #' @param graph Optional named graph IRI to add the resulting triples to
     #'   (default graph if NULL).
     #' @param uuid_namespace Optional namespace string for the UUIDv5 subject
@@ -346,7 +348,8 @@ Model <- R6::R6Class(
     #' constant IRI instead of reading it from a `predicate` column.
     #' @param data A data.frame with subject/predicate/object columns (or
     #'   just subject/object if `predicate` is given). A zero-row data.frame
-    #'   is a silent no-op.
+    #'   is NOT a no-op: missing/misnamed columns still raise a normal error
+    #'   regardless of row count.
     #' @param predicate Optional constant predicate IRI to use for every
     #'   row, instead of a `predicate` column in `data`.
     #' @param graph Optional named graph IRI to add the resulting triples to

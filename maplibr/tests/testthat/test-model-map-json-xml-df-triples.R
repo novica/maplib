@@ -3,6 +3,12 @@
 # points that don't go through an OTTR template, unlike $map()/$map_no_data().
 
 test_that("map_json_string() maps a JSON string via the Facade-X convention", {
+  # `1` is mapped to an xsd:long-typed literal, not a string
+  # (lib/triplestore/src/map_json.rs) -- `df$o == "1"` only passes because
+  # the resulting multi-typed ?o column gets coalesced to character by
+  # .collapse_multitype_columns(). If that coercion's behavior for
+  # non-character sub-columns ever changes, this assertion is the one that
+  # would need updating, not a sign the mapping itself broke.
   m <- Model$new()
   m$map_json_string('{"a": 1, "b": "x"}')
   df <- m$query("SELECT ?p ?o WHERE { ?s ?p ?o }")
@@ -72,11 +78,18 @@ test_that("map_df() maps a data.frame's columns directly, one predicate per colu
   expect_setequal(name_rows$o, c("Alice", "Bob"))
 })
 
-test_that("map_df() with a zero-row data.frame is a silent no-op", {
+test_that("map_df() with a zero-row data.frame still adds the root triple", {
+  # NOT a no-op, unlike $map(): Triplestore::map_df unconditionally adds one
+  # <root> rdf:type fx:root triple regardless of row count, and py_maplib's
+  # own map_df has no zero-row early return either -- matched here rather
+  # than diverging from it.
   m <- Model$new()
   d <- data.frame(name = character(0), stringsAsFactors = FALSE)
   m$map_df(d)
-  expect_equal(m$size(), 0)
+  expect_equal(m$size(), 1)
+  df <- m$query("SELECT ?p ?o WHERE { ?s ?p ?o }")
+  expect_equal(df$p, "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+  expect_equal(df$o, "http://sparql.xyz/facade-x/ns/root")
 })
 
 test_that("map_triples() maps subject/predicate/object columns directly", {
@@ -106,9 +119,21 @@ test_that("map_triples()'s predicate argument fixes a constant predicate for eve
   expect_true(all(df$p == "http://ex/const"))
 })
 
-test_that("map_triples() with a zero-row data.frame is a silent no-op", {
+test_that("map_triples() with a zero-row data.frame and correct columns is a no-op", {
   m <- Model$new()
   d <- data.frame(subject = character(0), predicate = character(0), object = character(0))
   m$map_triples(d)
   expect_equal(m$size(), 0)
+})
+
+test_that("map_triples() still validates columns on a zero-row data.frame", {
+  # Regression case: an earlier version skipped column validation entirely
+  # for a zero-row input, so a misnamed/missing column (e.g. a data.frame
+  # upstream-filtered down to zero rows) would silently succeed instead of
+  # raising a normal error -- expand_triples's own column-existence check
+  # (lib/maplib/src/model/expansion/validation.rs) runs regardless of row
+  # count, and this now does too.
+  m <- Model$new()
+  d <- data.frame(subj = character(0), pred = character(0), obj = character(0))
+  expect_error(m$map_triples(d), class = "maplibr_maplib_error")
 })
