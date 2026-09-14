@@ -155,6 +155,43 @@ Model <- R6::R6Class(
       df
     },
 
+    #' @description Run a SPARQL UPDATE (modify-style INSERT/DELETE ... WHERE)
+    #' against this Model in place.
+    #' @param update The SPARQL UPDATE string. Must be a DELETE/INSERT/WHERE
+    #'   form (`INSERT { ... } WHERE { ... }`, optionally with a DELETE
+    #'   clause too, and an empty `WHERE {}` when there's nothing to match
+    #'   against) -- the bare `INSERT DATA { ... }`/`DELETE DATA { ... }`
+    #'   forms are unimplemented in the core engine and panic if used (not
+    #'   fixable in this package -- see maplib-cai upstream issue).
+    #' @param graph Optional named graph IRI to restrict the update to
+    #'   (no restriction, i.e. the whole store, if NULL -- same "missing
+    #'   means unrestricted" semantics as `$query()`'s `graph` argument, not
+    #'   `$reads()`/`$writes()`'s "missing means the default graph").
+    #' @param include_transient Whether the WHERE clause may match transient
+    #'   (e.g. inferred) triples.
+    update = function(update, graph = NULL, include_transient = FALSE) {
+      .rethrow(private$rmodel$update(update, include_transient, graph))
+      invisible(self)
+    },
+
+    #' @description Run a SPARQL CONSTRUCT query and insert its results as
+    #' new triples into a (possibly different) graph.
+    #' @param query The SPARQL CONSTRUCT query string to source new triples
+    #'   from (a SELECT query errors -- INSERT needs a triple-shaped result).
+    #' @param source_graph Optional named graph IRI to query from (default
+    #'   graph if NULL).
+    #' @param target_graph Optional named graph IRI to insert into (default
+    #'   graph if NULL).
+    #' @param include_transient Whether the query may match transient (e.g.
+    #'   inferred) triples in the source graph.
+    #' @param transient Whether the newly-inserted triples themselves should
+    #'   be marked transient rather than permanent.
+    insert = function(query, source_graph = NULL, target_graph = NULL,
+                       include_transient = FALSE, transient = FALSE) {
+      .rethrow(private$rmodel$insert(query, include_transient, transient, source_graph, target_graph))
+      invisible(self)
+    },
+
     #' @description Register a Template so it can be referenced by IRI from
     #' `$map()`.
     #' @param template A `Template` (see `templates.R`), or an stOTTR document

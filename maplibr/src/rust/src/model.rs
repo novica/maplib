@@ -375,6 +375,82 @@ impl RModel {
         }
     }
 
+    /// Run a SPARQL UPDATE (INSERT DATA/DELETE DATA/DELETE-INSERT-WHERE)
+    /// against this Model in place (mirrors PyModel::update,
+    /// py_maplib/src/py_model.rs:415-469 / update_mutex, py_maplib/src/
+    /// mutexes.rs:375-397).
+    ///
+    /// @param update The SPARQL UPDATE string. Must be a DELETE/INSERT/WHERE
+    ///   form (`INSERT { ... } WHERE { ... }`, optionally with a DELETE
+    ///   clause too, and an empty `WHERE {}` when there's nothing to match
+    ///   against) -- the bare `INSERT DATA { ... }`/`DELETE DATA { ... }`
+    ///   forms are unimplemented in the core engine (`Triplestore::
+    ///   update_parsed`, lib/triplestore/src/sparql.rs:302-307, a bare
+    ///   `todo!()`) and panic if used. Not fixable in this package -- see
+    ///   maplib-cai upstream issue.
+    /// @param include_transient Whether the WHERE clause may match transient
+    ///   (e.g. inferred) triples. Defaults to FALSE.
+    /// @param graph Optional named graph IRI to restrict the update to
+    ///   (no restriction, i.e. the whole store, if NULL -- same "missing
+    ///   means unrestricted" semantics as query()'s `graph` argument, not
+    ///   reads()/writes()'s "missing means the default graph").
+    /// @export
+    fn update(&self, update: &str, include_transient: bool, graph: Option<&str>) -> savvy::Result<()> {
+        let named_graph = parse_query_graph(graph)?;
+        let mut inner = self.lock();
+        inner
+            .update(update, None, named_graph.as_ref(), false, include_transient, None, false)
+            .map_err(maplib_error)?;
+        Ok(())
+    }
+
+    /// Run a SPARQL SELECT/CONSTRUCT query and insert its results as new
+    /// triples into a (possibly different) graph (mirrors PyModel::insert,
+    /// py_maplib/src/py_model.rs:540-600 / insert_mutex, py_maplib/src/
+    /// mutexes.rs:498-519). New triples' solution mappings (py_maplib's
+    /// optional return dict) aren't surfaced here -- callers who need the
+    /// new triples back can query() the target graph again.
+    ///
+    /// @param query The SPARQL CONSTRUCT query string to source new triples
+    ///   from (a SELECT query errors -- INSERT needs a triple-shaped result,
+    ///   matching `Triplestore::insert_parsed`'s own constraint,
+    ///   lib/triplestore/src/sparql.rs:240-264).
+    /// @param include_transient Whether the query may match transient (e.g.
+    ///   inferred) triples in the source graph. Defaults to FALSE.
+    /// @param transient Whether the newly-inserted triples themselves should
+    ///   be marked transient rather than permanent. Defaults to FALSE.
+    /// @param source_graph Optional named graph IRI to query from (default
+    ///   graph if NULL).
+    /// @param target_graph Optional named graph IRI to insert into (default
+    ///   graph if NULL).
+    /// @export
+    fn insert(
+        &self,
+        query: &str,
+        include_transient: bool,
+        transient: bool,
+        source_graph: Option<&str>,
+        target_graph: Option<&str>,
+    ) -> savvy::Result<()> {
+        let source_graph = parse_optional_named_graph(source_graph)?;
+        let target_graph = parse_optional_named_graph(target_graph)?;
+        let mut inner = self.lock();
+        inner
+            .insert(
+                query,
+                None,
+                &source_graph,
+                include_transient,
+                &target_graph,
+                transient,
+                false,
+                None,
+                false,
+            )
+            .map_err(maplib_error)?;
+        Ok(())
+    }
+
     /// Parse RDF triples from a string into this Model.
     ///
     /// @param s RDF data as a string.

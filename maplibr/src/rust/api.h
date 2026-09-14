@@ -31,6 +31,7 @@ SEXP savvy_RModel_create_index__ffi(SEXP self__);
 SEXP savvy_RModel_deserialize__ffi(SEXP c_arg__path, SEXP c_arg__storage_folder);
 SEXP savvy_RModel_detach_graph__ffi(SEXP self__, SEXP c_arg__preserve_name, SEXP c_arg__graph);
 SEXP savvy_RModel_infer_rdfs__ffi(SEXP self__, SEXP c_arg__graph);
+SEXP savvy_RModel_insert__ffi(SEXP self__, SEXP c_arg__query, SEXP c_arg__include_transient, SEXP c_arg__transient, SEXP c_arg__source_graph, SEXP c_arg__target_graph);
 SEXP savvy_RModel_map__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__stream_ptr, SEXP c_arg__graph, SEXP c_arg__validate_iris);
 SEXP savvy_RModel_map_no_data__ffi(SEXP self__, SEXP c_arg__template_iri, SEXP c_arg__graph, SEXP c_arg__validate_iris);
 SEXP savvy_RModel_new__ffi(void);
@@ -39,6 +40,7 @@ SEXP savvy_RModel_reads__ffi(SEXP self__, SEXP c_arg__s, SEXP c_arg__format, SEX
 SEXP savvy_RModel_serialize__ffi(SEXP self__, SEXP c_arg__path);
 SEXP savvy_RModel_size__ffi(SEXP self__, SEXP c_arg__graph);
 SEXP savvy_RModel_truncate_graph__ffi(SEXP self__, SEXP c_arg__graph);
+SEXP savvy_RModel_update__ffi(SEXP self__, SEXP c_arg__update, SEXP c_arg__include_transient, SEXP c_arg__graph);
 SEXP savvy_RModel_writes__ffi(SEXP self__, SEXP c_arg__format, SEXP c_arg__graph);
 
 // methods and associated functions for RParameter

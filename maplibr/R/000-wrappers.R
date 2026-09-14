@@ -298,6 +298,12 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_insert` <- function(self) {
+  function(`query`, `include_transient`, `transient`, `source_graph` = NULL, `target_graph` = NULL) {
+    invisible(.Call(savvy_RModel_insert__impl, `self`, `query`, `include_transient`, `transient`, `source_graph`, `target_graph`))
+  }
+}
+
 `RModel_map` <- function(self) {
   function(`template_iri`, `stream_ptr`, `graph` = NULL, `validate_iris` = NULL) {
     invisible(.Call(savvy_RModel_map__impl, `self`, `template_iri`, `stream_ptr`, `graph`, `validate_iris`))
@@ -340,6 +346,12 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   }
 }
 
+`RModel_update` <- function(self) {
+  function(`update`, `include_transient`, `graph` = NULL) {
+    invisible(.Call(savvy_RModel_update__impl, `self`, `update`, `include_transient`, `graph`))
+  }
+}
+
 `RModel_writes` <- function(self) {
   function(`format` = NULL, `graph` = NULL) {
     .Call(savvy_RModel_writes__impl, `self`, `format`, `graph`)
@@ -357,6 +369,7 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   e$`create_index` <- `RModel_create_index`(ptr)
   e$`detach_graph` <- `RModel_detach_graph`(ptr)
   e$`infer_rdfs` <- `RModel_infer_rdfs`(ptr)
+  e$`insert` <- `RModel_insert`(ptr)
   e$`map` <- `RModel_map`(ptr)
   e$`map_no_data` <- `RModel_map_no_data`(ptr)
   e$`query` <- `RModel_query`(ptr)
@@ -364,6 +377,7 @@ class(`RInstance`) <- c("maplibr::RInstance__bundle", "savvy_maplibr__sealed")
   e$`serialize` <- `RModel_serialize`(ptr)
   e$`size` <- `RModel_size`(ptr)
   e$`truncate_graph` <- `RModel_truncate_graph`(ptr)
+  e$`update` <- `RModel_update`(ptr)
   e$`writes` <- `RModel_writes`(ptr)
 
   class(e) <- c("maplibr::RModel", "RModel", "savvy_maplibr__sealed")

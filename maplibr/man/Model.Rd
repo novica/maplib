@@ -22,6 +22,8 @@ returns \code{self} invisibly).
     \item \href{#method-Model-add_graph}{\code{Model$add_graph()}}
     \item \href{#method-Model-detach_graph}{\code{Model$detach_graph()}}
     \item \href{#method-Model-query}{\code{Model$query()}}
+    \item \href{#method-Model-update}{\code{Model$update()}}
+    \item \href{#method-Model-insert}{\code{Model$insert()}}
     \item \href{#method-Model-add_template}{\code{Model$add_template()}}
     \item \href{#method-Model-map}{\code{Model$map()}}
     \item \href{#method-Model-infer_rdfs}{\code{Model$infer_rdfs()}}
@@ -254,6 +256,72 @@ SolutionMappings.rdf_types) is attached as the data.frame's
 from the underlying JSON side-channel (maplibr/src/rust/src/
 arrow_bridge.rs) -- a full RDFType-based port of that accessor is
 left for later.
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-update"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-update}{}}}
+\subsection{\code{Model$update()}}{
+  Run a SPARQL UPDATE (modify-style INSERT/DELETE ... WHERE)
+against this Model in place.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$update(update, graph = NULL, include_transient = FALSE)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{update}}{The SPARQL UPDATE string. Must be a DELETE/INSERT/WHERE
+form (\verb{INSERT \{ ... \} WHERE \{ ... \}}, optionally with a DELETE
+clause too, and an empty \verb{WHERE \{\}} when there's nothing to match
+against) -- the bare \verb{INSERT DATA \{ ... \}}/\verb{DELETE DATA \{ ... \}}
+forms are unimplemented in the core engine and panic if used (not
+fixable in this package -- see maplib-cai upstream issue).}
+      \item{\code{graph}}{Optional named graph IRI to restrict the update to
+(no restriction, i.e. the whole store, if NULL -- same "missing
+means unrestricted" semantics as \verb{$query()}'s \code{graph} argument, not
+\verb{$reads()}/\verb{$writes()}'s "missing means the default graph").}
+      \item{\code{include_transient}}{Whether the WHERE clause may match transient
+(e.g. inferred) triples.}
+    }
+    \if{html}{\out{</div>}}
+  }
+}
+
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Model-insert"></a>}}
+\if{latex}{\out{\hypertarget{method-Model-insert}{}}}
+\subsection{\code{Model$insert()}}{
+  Run a SPARQL CONSTRUCT query and insert its results as
+new triples into a (possibly different) graph.
+  \subsection{Usage}{
+    \if{html}{\out{<div class="r">}}
+    \preformatted{Model$insert(
+  query,
+  source_graph = NULL,
+  target_graph = NULL,
+  include_transient = FALSE,
+  transient = FALSE
+)}
+    \if{html}{\out{</div>}}
+  }
+  \subsection{Arguments}{
+    \if{html}{\out{<div class="arguments">}}
+    \describe{
+      \item{\code{query}}{The SPARQL CONSTRUCT query string to source new triples
+from (a SELECT query errors -- INSERT needs a triple-shaped result).}
+      \item{\code{source_graph}}{Optional named graph IRI to query from (default
+graph if NULL).}
+      \item{\code{target_graph}}{Optional named graph IRI to insert into (default
+graph if NULL).}
+      \item{\code{include_transient}}{Whether the query may match transient (e.g.
+inferred) triples in the source graph.}
+      \item{\code{transient}}{Whether the newly-inserted triples themselves should
+be marked transient rather than permanent.}
+    }
+    \if{html}{\out{</div>}}
   }
 }
 
